@@ -5,7 +5,9 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Summer Fit — Seu treino começa aqui',
   description: 'Organize seus treinos, acompanhe seu progresso e evolua com a Summer Fit.',
-  generator: 'v0.app',
+  applicationName: 'Summer Fit',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'Summer Fit', statusBarStyle: 'default' },
   icons: {
     icon: [
       {
@@ -30,7 +32,7 @@ export const viewport: Viewport = {
   themeColor: '#fffdf7',
   width: 'device-width',
   initialScale: 1,
-  userScalable: false,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
