@@ -21,7 +21,15 @@ test('weekly totals use Monday through Sunday including year boundaries', () => 
 test('malformed metadata is bounded and invalid history is excluded', () => {
   const data = readFitness({ goal: Infinity, workouts: [null, { id: 'a', title: ' A ', minutes: -1, exercises: [null, { name: 'Agachamento', sets: 99 }] }], sessions: [{ id: 'bad', completedAt: 'invalid' }] })
   assert.equal(data.goal, 3); assert.equal(data.workouts[0].title, 'A'); assert.equal(data.workouts[0].minutes, 1)
-  assert.equal(data.workouts[0].exercises[0].sets, 10); assert.equal(data.sessions.length, 0)
+  assert.equal(data.workouts[0].exercises[0].sets, 20); assert.equal(data.sessions.length, 0)
+})
+test('keeps valid imported load details and removes malformed optional fields', () => {
+  const data = readFitness({ workouts: [{ id: 'a', title: 'A', exercises: [
+    { id: '1', name: 'Supino', sets: 4, reps: '10', weight: 32.55, weightUnit: 'kg', restSeconds: 90, notes: ' Cadência controlada ' },
+    { id: '2', name: 'Crucifixo', sets: 3, reps: '12', weight: -2, weightUnit: 'kg', restSeconds: Infinity },
+  ] }] })
+  assert.deepEqual(data.workouts[0].exercises[0], { id: '1', name: 'Supino', sets: 4, reps: '10', weight: 32.6, weightUnit: 'kg', restSeconds: 90, notes: 'Cadência controlada' })
+  assert.deepEqual(data.workouts[0].exercises[1], { id: '2', name: 'Crucifixo', sets: 3, reps: '12' })
 })
 test('retains only the latest bounded session history', () => {
   const sessions = Array.from({ length: MAX_SESSIONS + 2 }, (_, id) => ({ id: String(id), workoutId: 'a', title: 'A', completedAt: new Date().toISOString(), minutes: 20 }))
