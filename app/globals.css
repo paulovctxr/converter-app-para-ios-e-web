@@ -267,4 +267,116 @@ body:has(.import-overlay) { overflow: hidden; }
   .admin-import-config { grid-template-columns: 1fr; }
   .admin-import-copy, .admin-import-config button { grid-column: auto; }
 }
+/* Summer Gratis / Summer PRO */
+body:has(.paywall-overlay) { overflow: hidden; }
+.nutrition-home-card, .progress-pro-lock, .profile-plan-card, .pro-preview-card { display: flex; align-items: center; gap: 16px; margin-top: 16px; padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: white; }
+.nutrition-home-card > div:nth-child(2), .progress-pro-lock > div:nth-child(2), .profile-plan-card > div:nth-child(2), .pro-preview-card > div:nth-child(2) { flex: 1; min-width: 0; }
+.nutrition-home-card h3, .progress-pro-lock h3, .profile-plan-card strong, .pro-preview-card h3 { margin: 4px 0 6px; }
+.nutrition-home-card p:not(.eyebrow), .progress-pro-lock p:not(.eyebrow), .pro-preview-card p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.nutrition-home-icon, .profile-plan-icon, .pro-preview-icon { display: grid; flex: 0 0 auto; place-items: center; width: 48px; height: 48px; border-radius: 15px; color: #765d00; background: var(--soft-yellow); }
+.nutrition-home-icon.locked { color: #6d438d; background: #f0e7f7; }
+.locked-home-card, .progress-pro-lock { border-color: #ddcde9; background: linear-gradient(135deg, #fff, #faf5ff); }
+.pro-active-home { border-color: #e4c341; background: #fffbee; }
+.progress-pro-lock { max-width: 850px; }
+.profile-plan-card { width: min(100%, 760px); margin: 20px 0 4px; }
+.profile-plan-card.pro { color: white; border-color: #31250a; background: linear-gradient(135deg, #17130a, #3e3010); }
+.profile-plan-card.pro .profile-plan-icon { color: #17130a; background: var(--yellow); }
+.profile-plan-card span, .profile-plan-card small { display: block; }
+.profile-plan-card span { color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .7px; }
+.profile-plan-card.pro span, .profile-plan-card.pro small { color: #e7d99e; }
+.profile-plan-card strong { display: block; font-size: 17px; }
+.profile-plan-card small { max-width: 500px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.profile-plan-card .secondary-button, .profile-plan-card .primary-button { margin: 0; flex: 0 0 auto; }
+
+.pro-page { max-width: 1050px; }
+.pro-page-hero { display: flex; align-items: center; gap: 18px; padding: 22px; border: 1px solid #e4c341; border-radius: 20px; background: linear-gradient(135deg, #fff9d8, #fffdf7); }
+.pro-page-hero > div:nth-child(2) { flex: 1; }
+.pro-page-hero .panel-title { margin: 6px 0 7px; }
+.pro-page-hero p:not(.eyebrow) { max-width: 650px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.pro-hero-icon { display: grid; flex: 0 0 auto; place-items: center; width: 58px; height: 58px; border-radius: 18px; color: #191207; background: var(--yellow); }
+.pricing-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; margin-top: 20px; align-items: stretch; }
+.pricing-card { position: relative; padding: 25px; border: 1px solid var(--line); border-radius: 22px; background: white; overflow: hidden; }
+.pricing-card.pro-card { color: white; border-color: #30250b; background: radial-gradient(circle at 100% 0%, rgba(244, 196, 0, .2), transparent 34%), #17130a; box-shadow: 0 20px 50px rgba(23, 19, 10, .16); }
+.pricing-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
+.pricing-card h3 { margin: 6px 0 0; font-size: 25px; }
+.plan-kicker { color: #84775e; font-size: 9px; font-weight: 900; letter-spacing: 1px; }
+.pro-card .plan-kicker { color: #f0d976; }
+.current-plan-badge { display: inline-flex; padding: 7px 9px; border-radius: 999px; color: #5d4a00; background: var(--soft-yellow); font-size: 9px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
+.current-plan-badge.dark { color: #17130a; background: var(--yellow); }
+.best-value { position: absolute; top: 0; right: 22px; padding: 7px 11px; border-radius: 0 0 9px 9px; color: #17130a; background: var(--yellow); font-size: 8px; font-weight: 900; letter-spacing: .8px; }
+.plan-price { display: flex; align-items: baseline; gap: 7px; margin: 24px 0 12px; }
+.plan-price strong { font-size: 34px; letter-spacing: -1.4px; }
+.plan-price span { color: var(--muted); font-size: 11px; }
+.pro-price span { color: #d5c99d; }
+.plan-message, .annual-saving, .active-until { font-size: 11px; line-height: 1.5; }
+.plan-message { color: var(--muted); }
+.annual-saving { display: inline-block; margin: -2px 0 10px; padding: 6px 9px; border-radius: 7px; color: #f9df68; background: #30280f; font-weight: 800; }
+.active-until { margin: 11px 0 0; color: #d5c99d; text-align: center; }
+.feature-list { display: grid; gap: 10px; margin: 20px 0 0; padding: 0; list-style: none; }
+.feature-list li { display: flex; align-items: flex-start; gap: 8px; color: #5f5547; font-size: 12px; line-height: 1.4; }
+.feature-list svg { flex: 0 0 auto; color: #608c2f; }
+.pro-features li { color: #f0e9d1; }
+.pro-features svg { color: var(--yellow); }
+.billing-toggle { display: inline-flex; gap: 4px; margin-top: 20px; padding: 4px; border: 1px solid #4b4024; border-radius: 11px; background: #262011; }
+.billing-toggle button { min-height: 34px; padding: 0 13px; border: 0; border-radius: 8px; color: #cfc4a0; background: transparent; font-size: 10px; font-weight: 900; }
+.billing-toggle button.active { color: #17130a; background: var(--yellow); }
+.pro-subscribe { margin-top: 23px; }
+
+.pix-checkout { margin-top: 20px; padding: 24px; border: 1px solid #e4c341; border-radius: 20px; background: #fffbee; }
+.pix-checkout-heading { display: flex; align-items: center; gap: 13px; }
+.pix-checkout-heading h3 { margin: 5px 0 0; font-size: 21px; }
+.pix-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; color: #725900; background: var(--soft-yellow); }
+.pix-order-summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 19px 0 13px; padding: 13px 15px; border-radius: 12px; background: white; }
+.pix-order-summary span { color: var(--muted); font-size: 12px; }
+.pix-order-summary strong { font-size: 20px; }
+.pix-checkout > p, .pix-checkout > small { color: var(--muted); font-size: 12px; line-height: 1.65; }
+.pix-checkout code { display: block; margin: 13px 0; padding: 13px; border: 1px dashed #d7c36c; border-radius: 10px; background: white; font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.pix-checkout > .full-button { margin-top: 15px; }
+.pix-checkout > small { display: block; margin-top: 13px; }
+.pending-payment { display: flex; align-items: center; gap: 11px; margin-top: 15px; padding: 13px; border-radius: 12px; color: #5c4a00; background: var(--soft-yellow); }
+.pending-payment div { display: grid; gap: 3px; }
+.pending-payment span { font-size: 11px; line-height: 1.5; }
+.nutrition-card { max-width: none; }
+.pro-preview-card { margin-top: 20px; border-color: #ddcde9; background: linear-gradient(135deg, #fff, #faf5ff); }
+.preview-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.preview-pills span { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 8px; color: #64417f; background: #f0e7f7; font-size: 10px; font-weight: 800; }
+
+.paywall-overlay { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(23, 19, 10, .72); backdrop-filter: blur(7px); }
+.paywall-dialog { position: relative; width: min(100%, 610px); max-height: calc(100dvh - 44px); overflow: auto; padding: 34px; border: 1px solid #4a3b13; border-radius: 25px; color: white; background: radial-gradient(circle at 50% 0%, rgba(244, 196, 0, .22), transparent 36%), #17130a; box-shadow: 0 30px 100px rgba(0,0,0,.35); text-align: center; }
+.paywall-close { position: absolute; top: 16px; right: 16px; color: white; border-color: #4b4126; background: #292313; }
+.paywall-crown { display: grid; place-items: center; width: 70px; height: 70px; margin: 0 auto 16px; border-radius: 22px; color: #17130a; background: var(--yellow); }
+.paywall-dialog .eyebrow { color: #f0d976; }
+.paywall-dialog h2 { max-width: 480px; margin: 9px auto 22px; font-size: clamp(25px, 4vw, 34px); line-height: 1.13; letter-spacing: -1px; }
+.paywall-benefits { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; text-align: left; }
+.paywall-benefits div { display: flex; align-items: center; gap: 9px; padding: 11px; border: 1px solid #463b21; border-radius: 11px; color: #eee5c7; background: #241e10; font-size: 11px; }
+.paywall-benefits svg { color: var(--yellow); flex: 0 0 auto; }
+.paywall-price { display: grid; gap: 5px; margin: 23px 0 17px; }
+.paywall-price strong { color: var(--yellow); font-size: 22px; }
+.paywall-price span { color: #d0c5a1; font-size: 12px; }
+.paywall-dialog .text-button { margin-top: 15px; color: #d9cfad; }
+
+.pending-request-card { width: 100%; display: grid; gap: 5px; margin-bottom: 5px; padding: 10px; border: 1px solid #e4c341; border-radius: 10px; background: #fff9d8; }
+.pending-request-card strong { margin: 0 !important; color: #5c4900; font-size: 11px !important; }
+.pending-request-card span { color: var(--muted); font-size: 10px; }
+.pending-request-card > div { display: flex; gap: 6px; margin-top: 4px; }
+.status-badge.free { background: #f4f0e6; color: #665b48; }
+.status-badge.cancelled { background: #f0e7f7; color: #6c428b; }
+.admin-import-config { grid-template-columns: minmax(280px, 1fr) 170px auto; }
+
+@media (max-width: 850px) {
+  .pricing-grid { grid-template-columns: 1fr; }
+  .nutrition-home-card, .progress-pro-lock, .profile-plan-card, .pro-preview-card { align-items: flex-start; flex-wrap: wrap; }
+  .nutrition-home-card > .primary-button, .progress-pro-lock > .primary-button, .profile-plan-card > button, .pro-preview-card > .primary-button { width: 100%; }
+  .pro-page-hero { align-items: flex-start; flex-wrap: wrap; }
+  .pro-page-hero > .secondary-button { width: 100%; }
+}
+@media (max-width: 540px) {
+  .pricing-card, .pix-checkout { padding: 19px; }
+  .plan-price strong { font-size: 30px; }
+  .best-value { right: 15px; }
+  .paywall-overlay { padding: 0; place-items: stretch; }
+  .paywall-dialog { width: 100%; min-height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; padding: 62px 18px 28px; }
+  .paywall-benefits { grid-template-columns: 1fr; }
+  .pix-order-summary { align-items: flex-start; flex-direction: column; gap: 5px; }
+}
 @media (prefers-reduced-motion: reduce) { .spin, .scan-animation { animation: none; } }

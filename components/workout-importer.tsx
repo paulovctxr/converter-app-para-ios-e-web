@@ -7,7 +7,6 @@ import {
   ArrowUp,
   Camera,
   Check,
-  Crown,
   ImagePlus,
   Images,
   LoaderCircle,
@@ -42,7 +41,7 @@ type Step =
   | "low-quality"
   | "saving"
   | "success"
-  | "upsell";
+  | "limit";
 type Photo = { id: string; file: File; preview: string };
 type AnalyzeResponse = {
   ok?: boolean;
@@ -57,13 +56,11 @@ export function WorkoutImporter({
   availableWorkoutSlots,
   onClose,
   onManual,
-  onShowPlan,
   onSave,
 }: {
   availableWorkoutSlots: number;
   onClose: () => void;
   onManual: () => void;
-  onShowPlan: () => void;
   onSave: (workouts: Workout[], importId: string) => Promise<boolean>;
 }) {
   const [step, setStep] = useState<Step>("choice");
@@ -143,7 +140,7 @@ export function WorkoutImporter({
       return;
     }
     if (!access.allowed) {
-      setStep("upsell");
+      setStep("limit");
       return;
     }
     setStep("photos");
@@ -236,7 +233,7 @@ export function WorkoutImporter({
         const payload = await errorPayload(error);
         if (payload.code === "limit_reached") {
           await loadAccess();
-          setStep("upsell");
+          setStep("limit");
           return;
         }
         throw new Error(
@@ -453,11 +450,8 @@ export function WorkoutImporter({
                   </small>
                   {access && (
                     <em>
-                      {access.is_pro
-                        ? `${access.remaining} de ${access.monthly_limit} digitalizações disponíveis neste mês`
-                        : access.remaining > 0
-                          ? "Você possui 1 digitalização gratuita"
-                          : "Recurso Summer PRO"}
+                      Disponível no Summer Grátis · {access.remaining} de{" "}
+                      {access.monthly_limit} digitalizações restantes neste mês
                     </em>
                   )}
                 </div>
@@ -913,30 +907,26 @@ export function WorkoutImporter({
           </div>
         )}
 
-        {step === "upsell" && (
+        {step === "limit" && (
           <div className="import-body upsell-card">
             <div className="pro-icon">
-              <Crown size={30} />
+              <ScanLine size={30} />
             </div>
-            <p className="eyebrow">RECURSO SUMMER PRO</p>
-            <h3>Digitalize sua ficha automaticamente</h3>
+            <p className="eyebrow">RECURSO DO PLANO GRÁTIS</p>
+            <h3>Limite mensal de digitalizações atingido</h3>
             <p>
-              Tire uma foto da ficha que você recebeu na academia e deixe o
-              Summer transformar tudo em um treino digital.
+              A importação por foto continua gratuita. Sua cota será renovada
+              automaticamente no início do próximo mês.
             </p>
             <div className="pro-benefit">
-              <Sparkles size={18} />
+              <Camera size={18} />
               <span>
-                Até {access?.monthly_limit || 5} digitalizações por mês, com
-                várias fotos em cada ficha.
+                Cada digitalização pode reunir várias fotos da mesma ficha.
               </span>
             </div>
-            <button className="primary-button full-button" onClick={onShowPlan}>
-              <Crown size={17} />
-              CONHECER PRO
-            </button>
-            <button className="text-button" onClick={onManual}>
-              Prefiro criar manualmente
+            <button className="primary-button full-button" onClick={onManual}>
+              <PenLine size={17} />
+              CRIAR TREINO MANUALMENTE
             </button>
           </div>
         )}

@@ -3,8 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { PlanPanel } from "@/components/plan-panel";
+import { ProPaywall } from "@/components/pro-paywall";
 import { WorkoutImporter } from "@/components/workout-importer";
-import type { Access } from "@/lib/plans";
+import {
+  effectiveExpiresAt,
+  effectiveStatus,
+  isProAccess,
+  subscriptionPlanLabel,
+  type Access,
+} from "@/lib/plans";
 import { AuthScreen } from "@/components/auth-screen";
 import { createClient } from "@/lib/supabase/client";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
@@ -27,6 +34,7 @@ import {
   Clock3,
   Dumbbell,
   Home,
+  LockKeyhole,
   LogOut,
   Pencil,
   Play,
@@ -35,6 +43,7 @@ import {
   Target,
   Trash2,
   TrendingUp,
+  Utensils,
   UserRound,
   X,
 } from "lucide-react";
@@ -142,6 +151,7 @@ function Dashboard({ user }: { user: User }) {
   const [fitness, setFitness] = useState<FitnessData>(emptyFitness);
   const [draft, setDraft] = useState<Workout | null>(null);
   const [showImporter, setShowImporter] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const [active, setActive] = useState<{
     workout: Workout;
     startedAt: number;
@@ -157,6 +167,7 @@ function Dashboard({ user }: { user: User }) {
   const [search, setSearch] = useState("");
   const [dataReady, setDataReady] = useState(false);
   const [access, setAccess] = useState<Access | null>(null);
+  const paid = isProAccess(access);
   async function refreshAccess() {
     try {
       const { data, error } = await createClient().rpc("summer_get_access");
@@ -818,6 +829,47 @@ function Dashboard({ user }: { user: User }) {
                   <p className="neutral">Organizadas e salvas na sua conta</p>
                 </article>
               </div>
+              {paid ? (
+                <section className="nutrition-home-card pro-active-home">
+                  <div className="nutrition-home-icon">
+                    <Utensils size={24} />
+                  </div>
+                  <div>
+                    <p className="eyebrow">SUMMER PRO ATIVO</p>
+                    <h3>Seu painel nutricional está liberado</h3>
+                    <p>
+                      Acompanhe calorias e acesse os recursos nutricionais do
+                      seu plano.
+                    </p>
+                  </div>
+                  <button
+                    className="primary-button"
+                    onClick={() => setActiveTab("Plano")}
+                  >
+                    ABRIR NUTRIÇÃO
+                  </button>
+                </section>
+              ) : (
+                <section className="nutrition-home-card locked-home-card">
+                  <div className="nutrition-home-icon locked">
+                    <LockKeyhole size={23} />
+                  </div>
+                  <div>
+                    <p className="eyebrow">NUTRIÇÃO IA</p>
+                    <h3>Receba um cardápio personalizado de 7 dias</h3>
+                    <p>
+                      Alimentação organizada de acordo com seu objetivo,
+                      calorias e macronutrientes.
+                    </p>
+                  </div>
+                  <button
+                    className="primary-button"
+                    onClick={() => setShowPaywall(true)}
+                  >
+                    CONHECER SUMMER PRO
+                  </button>
+                </section>
+              )}
               <div className="section-heading">
                 <div>
                   <h3>Meus treinos</h3>
@@ -1180,42 +1232,65 @@ function Dashboard({ user }: { user: User }) {
                   <span>da meta semanal</span>
                 </div>
               </div>
-              <article className="chart-card">
-                <div className="section-heading">
-                  <h3>Frequência semanal</h3>
-                  <span>Segunda a domingo</span>
-                </div>
-                <div className="chart">
-                  {summary.counts.map((count, index) => (
-                    <div
-                      className="bar-column"
-                      key={days[index]}
-                      aria-label={`${days[index]}: ${count} treinos`}
-                    >
-                      <strong>{count}</strong>
-                      <div className="bar-track">
-                        <i
-                          style={{
-                            height: `${(count / Math.max(1, ...summary.counts)) * 100}%`,
-                          }}
-                        />
+              {paid ? (
+                <article className="chart-card">
+                  <div className="section-heading">
+                    <h3>Frequência semanal</h3>
+                    <span>Segunda a domingo</span>
+                  </div>
+                  <div className="chart">
+                    {summary.counts.map((count, index) => (
+                      <div
+                        className="bar-column"
+                        key={days[index]}
+                        aria-label={`${days[index]}: ${count} treinos`}
+                      >
+                        <strong>{count}</strong>
+                        <div className="bar-track">
+                          <i
+                            style={{
+                              height: `${(count / Math.max(1, ...summary.counts)) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <small>{days[index]}</small>
                       </div>
-                      <small>{days[index]}</small>
-                    </div>
-                  ))}
-                </div>
-              </article>
+                    ))}
+                  </div>
+                </article>
+              ) : (
+                <section className="progress-pro-lock">
+                  <div className="nutrition-home-icon locked">
+                    <LockKeyhole size={23} />
+                  </div>
+                  <div>
+                    <p className="eyebrow">SUMMER PRO</p>
+                    <h3>Gráficos e histórico completo</h3>
+                    <p>
+                      Veja evolução de cargas, estatísticas e recordes pessoais.
+                    </p>
+                  </div>
+                  <button
+                    className="primary-button"
+                    onClick={() => setShowPaywall(true)}
+                  >
+                    CONHECER PRO
+                  </button>
+                </section>
+              )}
               <div className="section-heading">
                 <div>
                   <h3>Histórico recente</h3>
                   <p>
-                    Últimos treinos concluídos, do mais recente ao mais antigo.
+                    {paid
+                      ? "Últimos treinos concluídos, do mais recente ao mais antigo."
+                      : "Seu histórico básico mostra os 3 treinos mais recentes."}
                   </p>
                 </div>
               </div>
               <div className="workout-list">
                 {fitness.sessions
-                  .slice(-10)
+                  .slice(paid ? -10 : -3)
                   .reverse()
                   .map((session) => (
                     <article className="workout-row" key={session.id}>
@@ -1253,6 +1328,50 @@ function Dashboard({ user }: { user: User }) {
               <p className="eyebrow">SEU PERFIL</p>
               <h2 className="panel-title">{displayName}</h2>
               <p className="lead profile-email">{user.email}</p>
+              <section
+                className={
+                  paid ? "profile-plan-card pro" : "profile-plan-card free"
+                }
+              >
+                <div className="profile-plan-icon">
+                  {paid ? <Crown size={23} /> : <Dumbbell size={23} />}
+                </div>
+                <div>
+                  <span>Plano atual</span>
+                  <strong>{paid ? "⭐ Summer PRO" : "Summer Grátis"}</strong>
+                  {paid ? (
+                    <small>
+                      {subscriptionPlanLabel(access?.subscription_plan)} · início{" "}
+                      {access?.subscription_started_at
+                        ? new Date(
+                            access.subscription_started_at,
+                          ).toLocaleDateString("pt-BR")
+                        : "—"}
+                      {" · "}renovação/vencimento{" "}
+                      {effectiveExpiresAt(access)
+                        ? new Date(
+                            effectiveExpiresAt(access) as string,
+                          ).toLocaleDateString("pt-BR")
+                        : "—"}
+                    </small>
+                  ) : (
+                    <small>
+                      {effectiveStatus(access) === "expired"
+                        ? "Seu Summer PRO anterior venceu. Seus treinos gratuitos continuam disponíveis."
+                        : effectiveStatus(access) === "cancelled"
+                          ? "Assinatura cancelada. Seus treinos gratuitos continuam disponíveis."
+                          : "Treinos e digitalização de ficha disponíveis gratuitamente."}
+                    </small>
+                  )}
+                </div>
+                <button
+                  className={paid ? "secondary-button" : "primary-button"}
+                  onClick={() => setActiveTab("Plano")}
+                  type="button"
+                >
+                  {paid ? "VER ASSINATURA" : "CONHECER SUMMER PRO"}
+                </button>
+              </section>
               <form
                 className="form-card"
                 onSubmit={(event) => {
@@ -1340,11 +1459,17 @@ function Dashboard({ user }: { user: User }) {
             setActiveTab("Treinos");
           }}
           onManual={createManualWorkout}
-          onShowPlan={() => {
-            setShowImporter(false);
-            setActiveTab("Plano");
-          }}
           onSave={saveImportedWorkouts}
+        />
+      )}
+      {showPaywall && (
+        <ProPaywall
+          onClose={() => setShowPaywall(false)}
+          onSubscribe={() => {
+            setShowPaywall(false);
+            setActiveTab("Plano");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         />
       )}
     </main>

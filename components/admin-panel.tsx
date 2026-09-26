@@ -13,6 +13,14 @@ import {
   Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  DEFAULT_PLAN_CONFIG,
+  formatBRL,
+  monthlyPrice,
+  subscriptionPlanLabel,
+  type PlanConfig,
+  type SubscriptionPlan,
+} from "@/lib/plans";
 
 type Student = {
   id: string;
@@ -23,7 +31,18 @@ type Student = {
   confirmed: boolean;
   plan: "basic" | "premium" | "plus";
   expires_at: string | null;
-  status: "basic" | "active" | "expired";
+  subscription_status: "free" | "pro" | "expired" | "cancelled";
+  subscription_plan: SubscriptionPlan | null;
+  subscription_started_at: string | null;
+  subscription_expires_at: string | null;
+  subscription_updated_at: string | null;
+  pending_request: {
+    id: number;
+    subscription_plan: SubscriptionPlan;
+    amount_cents: number;
+    status: "pending";
+    created_at: string;
+  } | null;
 };
 type Overview = {
   students: Student[];
@@ -34,6 +53,9 @@ type Overview = {
     expiring: number;
     expired: number;
     basic: number;
+    free: number;
+    pro: number;
+    cancelled: number;
   };
   server_time: string;
 };
@@ -42,7 +64,6 @@ type ImportConfig = {
   free_trial_limit: number;
   updated_at: string;
 };
-const plans = { basic: "Básico", premium: "Premium", plus: "Summer PRO" };
 function date(value: string | null) {
   return value
     ? new Date(value).toLocaleDateString("pt-BR", {
@@ -60,10 +81,10 @@ export function AdminPanel() {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [importConfig, setImportConfig] = useState<ImportConfig | null>(null);
+  const [planConfig, setPlanConfig] =
+    useState<PlanConfig>(DEFAULT_PLAN_CONFIG);
   const [configBusy, setConfigBusy] = useState(false);
-  const [choices, setChoices] = useState<Record<string, "premium" | "plus">>(
-    {},
-  );
+  const [choices, setChoices] = useState<Record<string, SubscriptionPlan>>({});
   const request = useRef(0);
   const changing = useRef(false);
   const load = useCallback(async () => {
@@ -71,18 +92,21 @@ export function AdminPanel() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const [students, config] = await Promise.all([
+      const [students, config, pricing] = await Promise.all([
         supabase.rpc("summer_admin_students", {
           p_search: search,
           p_status: status,
           p_page: page,
         }),
         supabase.rpc("summer_admin_workout_import_config"),
+        supabase.rpc("summer_get_plan_config"),
       ]);
       if (id !== request.current) return;
       if (students.error) throw students.error;
       setResult(students.data as Overview);
       if (!config.error && config.data) setImportConfig(config.data as ImportConfig);
+      if (!pricing.error && pricing.data)
+        setPlanConfig(pricing.data as PlanConfig);
     } catch {
       if (id === request.current) {
         setResult(null);
@@ -105,25 +129,26 @@ export function AdminPanel() {
     action: "grant" | "renew" | "revoke",
   ) {
     if (changing.current) return;
-    const plan =
-      choices[student.id] ||
-      (student.plan === "basic" ? "premium" : student.plan);
+    const plan = choices[student.id] || student.subscription_plan || "monthly";
     const description =
       action === "revoke"
-        ? `Revogar o acesso pago de ${student.name || student.email} agora?`
+        ? `Cancelar o Summer PRO de ${student.name || student.email} agora?`
         : action === "renew"
-          ? `Renovar ${plans[student.plan]} por 1 mês para ${student.name || student.email}? Dias ainda válidos serão preservados. Confirme apenas após verificar o pagamento.`
-          : `Liberar ${plans[plan]} por 1 mês para ${student.name || student.email}? Dias ainda válidos serão preservados. Confirme apenas após verificar o pagamento.`;
+          ? `Renovar o Summer PRO no ${subscriptionPlanLabel(plan).toLowerCase()} para ${student.name || student.email}? Dias ainda válidos serão preservados. Confirme apenas após verificar o pagamento.`
+          : `Liberar o Summer PRO no ${subscriptionPlanLabel(plan).toLowerCase()} para ${student.name || student.email}? Confirme apenas após verificar o pagamento.`;
     if (!window.confirm(description)) return;
     changing.current = true;
     setBusy(student.id);
     setMessage("");
     try {
-      const { error } = await createClient().rpc("summer_admin_set_plan", {
+      const { error } = await createClient().rpc(
+        "summer_admin_set_subscription",
+        {
         p_user_id: student.id,
-        p_plan: plan,
+          p_subscription_plan: plan,
         p_action: action,
-      });
+        },
+      );
       if (error) throw error;
       setMessage(
         action === "revoke"
@@ -140,6 +165,43 @@ export function AdminPanel() {
       setBusy(null);
     }
   }
+  async function reviewRequest(
+    student: Student,
+    decision: "approved" | "rejected",
+  ) {
+    const pending = student.pending_request;
+    if (!pending || changing.current) return;
+    const verb = decision === "approved" ? "aprovar" : "recusar";
+    if (
+      !window.confirm(
+        `${verb[0].toUpperCase()}${verb.slice(1)} o pagamento de ${formatBRL(pending.amount_cents)} enviado por ${student.name || student.email}?${decision === "approved" ? " Confirme somente após conferir o comprovante e o recebimento no banco." : ""}`,
+      )
+    )
+      return;
+    changing.current = true;
+    setBusy(`request-${pending.id}`);
+    setMessage("");
+    try {
+      const { error } = await createClient().rpc(
+        "summer_admin_review_subscription_request",
+        { p_request_id: pending.id, p_decision: decision },
+      );
+      if (error) throw error;
+      setMessage(
+        decision === "approved"
+          ? "Pagamento aprovado e Summer PRO liberado."
+          : "Solicitação recusada sem alterar o plano do aluno.",
+      );
+      await load();
+    } catch {
+      setMessage(
+        "Não foi possível analisar essa solicitação. Atualize a lista e tente novamente.",
+      );
+    } finally {
+      changing.current = false;
+      setBusy(null);
+    }
+  }
   async function saveImportConfig(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!importConfig || configBusy) return;
@@ -150,7 +212,7 @@ export function AdminPanel() {
         "summer_admin_workout_import_config",
         {
           p_monthly_limit: importConfig.monthly_limit,
-          p_free_trial_limit: importConfig.free_trial_limit,
+          p_free_trial_limit: null,
         },
       );
       if (error) throw error;
@@ -223,14 +285,13 @@ export function AdminPanel() {
               <div>
                 <h2>Importação por foto</h2>
                 <p>
-                  Altere as cotas sem precisar publicar uma nova versão do app.
-                  O Summer PRO usa o limite mensal; as outras contas recebem o
-                  teste gratuito.
+                  A digitalização faz parte do Summer Grátis. Altere aqui a
+                  cota mensal de todas as contas sem publicar uma nova versão.
                 </p>
               </div>
             </div>
             <label>
-              Summer PRO / mês
+              Digitalizações grátis / mês
               <input
                 type="number"
                 min={1}
@@ -241,22 +302,6 @@ export function AdminPanel() {
                   setImportConfig({
                     ...importConfig,
                     monthly_limit: Number(event.target.value),
-                  })
-                }
-              />
-            </label>
-            <label>
-              Teste gratuito
-              <input
-                type="number"
-                min={0}
-                max={5}
-                required
-                value={importConfig.free_trial_limit}
-                onChange={(event) =>
-                  setImportConfig({
-                    ...importConfig,
-                    free_trial_limit: Number(event.target.value),
                   })
                 }
               />
@@ -307,10 +352,11 @@ export function AdminPanel() {
                 }}
               >
                 <option value="all">Todos os alunos</option>
-                <option value="active">Planos ativos</option>
+                <option value="pro">Summer PRO ativo</option>
                 <option value="expiring">Vencem em até 7 dias</option>
                 <option value="expired">Planos vencidos</option>
-                <option value="basic">Plano básico</option>
+                <option value="cancelled">Planos cancelados</option>
+                <option value="free">Summer Grátis</option>
               </select>
             </label>
           </div>
@@ -353,37 +399,49 @@ export function AdminPanel() {
                       </td>
                       <td>{student.registration || "Não informada"}</td>
                       <td>
-                        <span className={`plan-badge ${student.plan}`}>
-                          {plans[student.plan]}
+                        <span
+                          className={`plan-badge ${student.subscription_status === "pro" ? "plus" : "basic"}`}
+                        >
+                          {student.subscription_status === "pro"
+                            ? "Summer PRO"
+                            : "Summer Grátis"}
                         </span>
+                        {student.subscription_plan && (
+                          <small>
+                            {subscriptionPlanLabel(student.subscription_plan)}
+                          </small>
+                        )}
                       </td>
                       <td>
-                        <strong>{date(student.expires_at)}</strong>
-                        {student.expires_at && (
+                        <strong>{date(student.subscription_expires_at)}</strong>
+                        {student.subscription_expires_at && (
                           <small>
-                            {new Date(student.expires_at).toLocaleTimeString(
-                              "pt-BR",
-                              {
-                                timeZone: "America/Sao_Paulo",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}{" "}
+                            {new Date(
+                              student.subscription_expires_at,
+                            ).toLocaleTimeString("pt-BR", {
+                              timeZone: "America/Sao_Paulo",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
                             · Brasília
                           </small>
                         )}
                       </td>
                       <td>
-                        <span className={`status-badge ${student.status}`}>
-                          {student.status === "active"
-                            ? "Ativo"
-                            : student.status === "expired"
+                        <span
+                          className={`status-badge ${student.subscription_status === "pro" ? "active" : student.subscription_status}`}
+                        >
+                          {student.subscription_status === "pro"
+                            ? "PRO ativo"
+                            : student.subscription_status === "expired"
                               ? "Vencido"
-                              : "Gratuito"}
+                              : student.subscription_status === "cancelled"
+                                ? "Cancelado"
+                                : "Gratuito"}
                         </span>
-                        {student.status === "active" &&
-                          student.expires_at &&
-                          new Date(student.expires_at).getTime() -
+                        {student.subscription_status === "pro" &&
+                          student.subscription_expires_at &&
+                          new Date(student.subscription_expires_at).getTime() -
                             new Date(result.server_time).getTime() <=
                             7 * 86400000 && (
                             <small className="expiring-text">
@@ -393,26 +451,62 @@ export function AdminPanel() {
                       </td>
                       <td>
                         <div className="admin-row-actions">
+                          {student.pending_request && (
+                            <div className="pending-request-card">
+                              <strong>PIX aguardando conferência</strong>
+                              <span>
+                                {subscriptionPlanLabel(
+                                  student.pending_request.subscription_plan,
+                                )}{" "}
+                                · {formatBRL(student.pending_request.amount_cents)}
+                              </span>
+                              <div>
+                                <button
+                                  className="primary-button"
+                                  disabled={Boolean(busy)}
+                                  onClick={() =>
+                                    void reviewRequest(student, "approved")
+                                  }
+                                >
+                                  {busy ===
+                                  `request-${student.pending_request.id}`
+                                    ? "SALVANDO..."
+                                    : "APROVAR PIX"}
+                                </button>
+                                <button
+                                  className="revoke-button"
+                                  disabled={Boolean(busy)}
+                                  onClick={() =>
+                                    void reviewRequest(student, "rejected")
+                                  }
+                                >
+                                  Recusar
+                                </button>
+                              </div>
+                            </div>
+                          )}
                           <select
                             aria-label={`Plano para ${student.name || student.email}`}
                             value={
                               choices[student.id] ||
-                              (student.plan === "basic"
-                                ? "premium"
-                                : student.plan)
+                              student.pending_request?.subscription_plan ||
+                              student.subscription_plan ||
+                              "monthly"
                             }
                             disabled={Boolean(busy)}
                             onChange={(e) =>
                               setChoices((current) => ({
                                 ...current,
-                                [student.id]: e.target.value as
-                                  | "premium"
-                                  | "plus",
+                                [student.id]: e.target.value as SubscriptionPlan,
                               }))
                             }
                           >
-                            <option value="premium">Premium · R$ 5</option>
-                            <option value="plus">Summer PRO · R$ 8</option>
+                            <option value="monthly">
+                              PRO mensal · {formatBRL(monthlyPrice(planConfig))}
+                            </option>
+                            <option value="annual">
+                              PRO anual · {formatBRL(planConfig.pro_annual_price_cents)}
+                            </option>
                           </select>
                           <button
                             className="primary-button"
@@ -421,18 +515,22 @@ export function AdminPanel() {
                           >
                             {busy === student.id
                               ? "SALVANDO..."
-                              : "LIBERAR 1 MÊS"}
+                              : (choices[student.id] ||
+                                    student.subscription_plan ||
+                                    "monthly") === "annual"
+                                ? "LIBERAR 1 ANO"
+                                : "LIBERAR 1 MÊS"}
                           </button>
-                          {student.plan !== "basic" && (
+                          {student.subscription_plan && (
                             <button
                               className="secondary-button"
                               disabled={Boolean(busy) || !student.confirmed}
                               onClick={() => void changePlan(student, "renew")}
                             >
-                              Renovar +1 mês
+                              Renovar período
                             </button>
                           )}
-                          {student.status === "active" && (
+                          {student.subscription_status === "pro" && (
                             <button
                               className="revoke-button"
                               disabled={Boolean(busy)}

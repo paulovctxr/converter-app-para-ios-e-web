@@ -11,9 +11,11 @@ Aplicativo Next.js com autenticação Supabase, fichas pessoais persistentes, re
 - Sessão de treino com cronômetro, checklist, histórico real e meta semanal.
 - Interface responsiva e manifesto para adicionar à tela inicial do celular. Internet é necessária; não há promessa de uso offline.
 - `/admin`: painel exclusivo do proprietário, alunos paginados, pesquisa por nome/e-mail/matrícula disponível, filtros por situação e alertas de vencimento em sete dias.
-- Premium (R$ 5) e Summer PRO (R$ 8): liberação manual por um mês, renovação que preserva dias válidos, revogação imediata e auditoria no banco. O identificador interno do PRO continua sendo `plus` para não quebrar contas existentes.
-- Summer PRO inclui cinco digitalizações por mês. Contas sem PRO recebem uma digitalização de teste; ambos os limites são configuráveis no painel administrativo.
-- Registro manual de calorias protegido por plano ativo. A interface não promete os demais recursos do antigo projeto mobile (vídeos, professores, evolução de cargas) como já implementados nesta versão.
+- Summer Grátis (R$ 0): cadastro, treinos manuais, digitalização da ficha por foto, cargas, cronômetro e histórico básico.
+- Summer PRO: R$ 14,90/mês ou R$ 119,90/ano, com economia de R$ 58,90 no anual. O preço fica centralizado em `summer_private.plan_config` e a promoção futura de R$ 9,90/mês pode ser ativada sem alterar as telas.
+- O pagamento continua sendo manual via PIX. A pessoa solicita a assinatura, envia o comprovante e somente o administrador aprova no painel. O Summer PRO usa os status `free`, `pro`, `expired` e `cancelled`, com periodicidade mensal ou anual.
+- A digitalização por foto permanece disponível no Summer Grátis. Para proteger o custo da IA, a cota mensal é configurável no painel e vale para todas as contas; repetir uma análise que falhou não é contado como conclusão.
+- Registro manual de calorias protegido por plano PRO. Os recursos de nutrição IA, gráficos, recordes e biblioteca completa ficam apresentados como recursos premium e podem ser ativados conforme forem implementados.
 
 ## Configuração obrigatória antes da publicação
 
@@ -34,7 +36,7 @@ A migração deve estar aplicada antes de disponibilizar esta versão a alunos. 
 
 ## Planos e Pix
 
-A chave Pix é a já fornecida pelo proprietário. Não há cobrança automática nem verificação bancária. O administrador confere o pagamento antes de liberar/renovar. Os prazos são calculados no servidor, por mês calendário. O botão Liberar adiciona um mês e permite escolher outro plano; Renovar preserva o plano atual. Revogar encerra a validade imediatamente, sem apagar o histórico.
+A chave Pix é a já fornecida pelo proprietário. Não há cobrança automática nem verificação bancária. O administrador confere o pagamento antes de aprovar a solicitação. Os prazos são calculados no servidor: um mês para o plano mensal e um ano para o anual. Cancelar encerra o acesso imediatamente, sem apagar o histórico. A confirmação nunca depende de uma informação enviada pelo frontend.
 
 Os dados sensíveis são protegidos por RLS e permissões SQL. Alunos só acessam seus próprios treinos e registros. Alterações de planos usam funções que verificam a administração no banco, com auditoria em `summer_private.plan_audit`. O acesso pago é verificado a cada consulta ao banco, mesmo que a interface ainda mostre um status antigo.
 
@@ -50,6 +52,6 @@ pnpm test
 pnpm build
 ```
 
-Testes usam PostgreSQL local em memória (PGlite), sem dados de produção: bloqueio de administração para alunos/anônimos, isolamento entre contas, renovação, revogação, gravação concorrente, teste gratuito e limite mensal de importações.
+Testes usam PostgreSQL local em memória (PGlite), sem dados de produção: bloqueio de administração para alunos/anônimos, isolamento entre contas, solicitação e aprovação via PIX, renovação, cancelamento, gravação concorrente e limite mensal de importações gratuitas.
 
 Limites atuais: 30 fichas por conta, 20 exercícios por ficha e os últimos 180 treinos concluídos. Fichas ficam em `summer_fitness_state`, fora do JWT de autenticação. A gravação detecta conflitos de revisão entre aparelhos. Esta alteração não recompila nem atualiza o APK Android existente.

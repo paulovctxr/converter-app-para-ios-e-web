@@ -32,6 +32,7 @@ export type WorkoutImportAnalysis = {
 };
 export type WorkoutImportAccess = {
   is_pro: boolean;
+  available_on_free?: boolean;
   allowed: boolean;
   used: number;
   remaining: number;
