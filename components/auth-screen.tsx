@@ -17,14 +17,15 @@ export function AuthScreen() {
     setLoading(true)
     setMessage('')
     const supabase = createClient()
+    const normalizedEmail = email.trim().toLowerCase()
     const result = mode === 'login'
-      ? await supabase.auth.signInWithPassword({ email, password })
+      ? await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
       : await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
           options: {
             emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback`,
-            data: { name },
+            data: { name: name.trim() },
           },
         })
     setLoading(false)
