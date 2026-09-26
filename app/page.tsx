@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { PlanPanel } from "@/components/plan-panel";
 import { ProPaywall } from "@/components/pro-paywall";
+import { ProProgressInsights } from "@/components/pro-progress-insights";
 import { WorkoutImporter } from "@/components/workout-importer";
 import {
   effectiveExpiresAt,
@@ -435,6 +436,18 @@ function Dashboard({ user }: { user: User }) {
         1,
         Math.min(240, Math.round((Date.now() - active.startedAt) / 60000)),
       ),
+      exercises: active.workout.exercises.map((exercise) => ({
+        exerciseId: exercise.id,
+        name: exercise.name,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        ...(typeof exercise.weight === "number"
+          ? {
+              weight: exercise.weight,
+              weightUnit: exercise.weightUnit || ("kg" as const),
+            }
+          : {}),
+      })),
     };
     if (
       await persist(
@@ -1233,31 +1246,34 @@ function Dashboard({ user }: { user: User }) {
                 </div>
               </div>
               {paid ? (
-                <article className="chart-card">
-                  <div className="section-heading">
-                    <h3>Frequência semanal</h3>
-                    <span>Segunda a domingo</span>
-                  </div>
-                  <div className="chart">
-                    {summary.counts.map((count, index) => (
-                      <div
-                        className="bar-column"
-                        key={days[index]}
-                        aria-label={`${days[index]}: ${count} treinos`}
-                      >
-                        <strong>{count}</strong>
-                        <div className="bar-track">
-                          <i
-                            style={{
-                              height: `${(count / Math.max(1, ...summary.counts)) * 100}%`,
-                            }}
-                          />
+                <>
+                  <article className="chart-card">
+                    <div className="section-heading">
+                      <h3>Frequência semanal</h3>
+                      <span>Segunda a domingo</span>
+                    </div>
+                    <div className="chart">
+                      {summary.counts.map((count, index) => (
+                        <div
+                          className="bar-column"
+                          key={days[index]}
+                          aria-label={`${days[index]}: ${count} treinos`}
+                        >
+                          <strong>{count}</strong>
+                          <div className="bar-track">
+                            <i
+                              style={{
+                                height: `${(count / Math.max(1, ...summary.counts)) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <small>{days[index]}</small>
                         </div>
-                        <small>{days[index]}</small>
-                      </div>
-                    ))}
-                  </div>
-                </article>
+                      ))}
+                    </div>
+                  </article>
+                  <ProProgressInsights sessions={fitness.sessions} />
+                </>
               ) : (
                 <section className="progress-pro-lock">
                   <div className="nutrition-home-icon locked">
@@ -1290,7 +1306,7 @@ function Dashboard({ user }: { user: User }) {
               </div>
               <div className="workout-list">
                 {fitness.sessions
-                  .slice(paid ? -10 : -3)
+                  .slice(paid ? -MAX_SESSIONS : -3)
                   .reverse()
                   .map((session) => (
                     <article className="workout-row" key={session.id}>

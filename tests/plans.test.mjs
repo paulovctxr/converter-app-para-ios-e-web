@@ -17,6 +17,14 @@ test('plan helpers keep free and PRO access explicit', () => {
     expires_at: '2099-01-01T00:00:00Z',
     server_time: '2026-01-01T00:00:00Z',
   }), true)
+  assert.equal(isProAccess({
+    is_admin: true,
+    subscription_status: 'free',
+    subscription_plan: null,
+    plan: 'basic',
+    expires_at: null,
+    server_time: '2026-01-01T00:00:00Z',
+  }), true)
   assert.equal(effectiveStatus({
     is_admin: false,
     subscription_status: 'expired',
@@ -38,4 +46,5 @@ test('central pricing supports a future promotion without changing screens', () 
       DEFAULT_PLAN_CONFIG.pro_annual_price_cents,
     DEFAULT_PLAN_CONFIG.annual_savings_cents,
   )
+  assert.equal(DEFAULT_PLAN_CONFIG.nutrition_generation_limit, 4)
 })

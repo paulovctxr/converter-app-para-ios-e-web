@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFitness, weekSummary, safeRedirectPath, MAX_SESSIONS } from '../lib/fitness.ts'
+import { proProgressInsights, readFitness, weekSummary, safeRedirectPath, MAX_SESSIONS } from '../lib/fitness.ts'
 
 test('rejects external and protocol-relative auth redirects', () => {
   for (const path of ['https://evil.example', '//evil.example', '/\\evil.example', '/\nevil.example', null]) assert.equal(safeRedirectPath(path), '/')
@@ -34,4 +34,17 @@ test('keeps valid imported load details and removes malformed optional fields', 
 test('retains only the latest bounded session history', () => {
   const sessions = Array.from({ length: MAX_SESSIONS + 2 }, (_, id) => ({ id: String(id), workoutId: 'a', title: 'A', completedAt: new Date().toISOString(), minutes: 20 }))
   const data = readFitness({ sessions }); assert.equal(data.sessions.length, MAX_SESSIONS); assert.equal(data.sessions[0].id, '2')
+})
+
+test('completed exercise snapshots produce load progress and personal records', () => {
+  const sessions = readFitness({ sessions: [
+    { id: '1', workoutId: 'a', title: 'A', completedAt: '2026-09-20T10:00:00Z', minutes: 40, exercises: [{ exerciseId: 'supino', name: 'Supino reto', sets: 4, reps: '10', weight: 30, weightUnit: 'kg' }] },
+    { id: '2', workoutId: 'a', title: 'A', completedAt: '2026-09-22T10:00:00Z', minutes: 50, exercises: [{ exerciseId: 'supino', name: 'Supino reto', sets: 4, reps: '8', weight: 35, weightUnit: 'kg' }] },
+  ] }).sessions
+  const result = proProgressInsights(sessions, new Date('2026-09-23T12:00:00Z'))
+  assert.equal(result.totalSessions, 2)
+  assert.equal(result.totalMinutes, 90)
+  assert.equal(result.records[0].name, 'Supino reto')
+  assert.equal(result.records[0].weightKg, 35)
+  assert.deepEqual(result.progress[0].points.map(point => point.weightKg), [30, 35])
 })

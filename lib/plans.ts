@@ -22,6 +22,7 @@ export type PlanConfig = {
   promotion_active: boolean;
   pix_key: string;
   annual_savings_cents: number;
+  nutrition_generation_limit: number;
   updated_at?: string;
 };
 
@@ -45,6 +46,7 @@ export const DEFAULT_PLAN_CONFIG: PlanConfig = {
   promotion_active: false,
   pix_key: PIX_KEY,
   annual_savings_cents: 5890,
+  nutrition_generation_limit: 4,
 };
 
 export const FREE_FEATURES = [
@@ -76,6 +78,9 @@ export const PLAN_NAMES = {
 
 export function isProAccess(access: Access | null | undefined) {
   if (!access) return false;
+  // The verified owner can test and administer every PRO feature without
+  // needing a separate paid subscription. The database enforces the same rule.
+  if (access.is_admin) return true;
   if (access.subscription_status)
     return access.subscription_status === "pro";
   return access.plan === "premium" || access.plan === "plus";

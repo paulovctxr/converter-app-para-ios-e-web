@@ -21,6 +21,15 @@ export type WorkoutSession = {
   title: string;
   completedAt: string;
   minutes: number;
+  exercises?: WorkoutSessionExercise[];
+};
+export type WorkoutSessionExercise = {
+  exerciseId: string;
+  name: string;
+  sets: number;
+  reps: string;
+  weight?: number;
+  weightUnit?: "kg" | "lb";
 };
 export type FitnessData = {
   version: 1;
@@ -98,8 +107,100 @@ export function readFitness(value: unknown): FitnessData {
       title: text(s.title, 80),
       completedAt: s.completedAt,
       minutes: number(s.minutes, 1, 240),
+      exercises: (Array.isArray(s.exercises) ? s.exercises : [])
+        .filter((e) => e && typeof e === "object" && e.name)
+        .slice(0, 20)
+        .map((e) => {
+          const weight = optionalNumber(e.weight, 2000);
+          return {
+            exerciseId: text(e.exerciseId, 80),
+            name: text(e.name, 80),
+            sets: number(e.sets, 1, 20),
+            reps: text(e.reps, 40) || "—",
+            ...(weight === undefined
+              ? {}
+              : {
+                  weight,
+                  weightUnit:
+                    e.weightUnit === "lb" ? ("lb" as const) : ("kg" as const),
+                }),
+          };
+        }),
     }));
   return { version: 1, goal: number(data.goal, 3, 7), workouts, sessions };
+}
+
+function dayKey(value: string | Date) {
+  const date = value instanceof Date ? value : new Date(value);
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+export function proProgressInsights(
+  sessions: WorkoutSession[],
+  now = new Date(),
+) {
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const completedDays = new Set(sessions.map((session) => dayKey(session.completedAt)));
+  let streakDays = 0;
+  const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (!completedDays.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (completedDays.has(dayKey(cursor))) {
+    streakDays += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  const records = new Map<
+    string,
+    { name: string; weightKg: number; completedAt: string }
+  >();
+  const progress = new Map<
+    string,
+    { name: string; points: { weightKg: number; completedAt: string }[] }
+  >();
+  for (const session of sessions) {
+    for (const exercise of session.exercises || []) {
+      if (typeof exercise.weight !== "number") continue;
+      const weightKg =
+        exercise.weightUnit === "lb"
+          ? Math.round(exercise.weight * 0.453592 * 10) / 10
+          : exercise.weight;
+      const key = exercise.name.trim().toLocaleLowerCase("pt-BR");
+      if (!key) continue;
+      const previous = records.get(key);
+      if (!previous || weightKg > previous.weightKg)
+        records.set(key, {
+          name: exercise.name,
+          weightKg,
+          completedAt: session.completedAt,
+        });
+      const series = progress.get(key) || { name: exercise.name, points: [] };
+      series.points.push({ weightKg, completedAt: session.completedAt });
+      progress.set(key, series);
+    }
+  }
+  for (const series of progress.values())
+    series.points.sort(
+      (a, b) => Date.parse(a.completedAt) - Date.parse(b.completedAt),
+    );
+  return {
+    totalSessions: sessions.length,
+    totalMinutes: sessions.reduce((total, session) => total + session.minutes, 0),
+    averageMinutes: sessions.length
+      ? Math.round(
+          sessions.reduce((total, session) => total + session.minutes, 0) /
+            sessions.length,
+        )
+      : 0,
+    monthSessions: sessions.filter(
+      (session) => new Date(session.completedAt) >= monthStart,
+    ).length,
+    streakDays,
+    records: Array.from(records.values()).sort(
+      (a, b) => b.weightKg - a.weightKg,
+    ),
+    progress: Array.from(progress.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, "pt-BR"),
+    ),
+  };
 }
 export function weekSummary(sessions: WorkoutSession[], now = new Date()) {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());

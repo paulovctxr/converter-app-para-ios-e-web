@@ -7,13 +7,12 @@ import {
   Copy,
   Crown,
   Droplets,
-  Plus,
   RefreshCw,
   ShieldCheck,
   Sparkles,
-  Trash2,
   Utensils,
 } from "lucide-react";
+import { ProWorkspace } from "@/components/pro-workspace";
 import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_PLAN_CONFIG,
@@ -29,13 +28,6 @@ import {
   type SubscriptionPlan,
   type SubscriptionRequest,
 } from "@/lib/plans";
-
-type Entry = { id: string; label: string; calories: number };
-
-function today() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
 
 function date(value: string | null | undefined) {
   return value
@@ -54,14 +46,10 @@ export function PlanPanel({
 }) {
   const [config, setConfig] = useState<PlanConfig>(DEFAULT_PLAN_CONFIG);
   const [selectedPlan, setSelectedPlan] =
-    useState<SubscriptionPlan>("annual");
+    useState<SubscriptionPlan>("monthly");
   const [request, setRequest] = useState<SubscriptionRequest | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [day, setDay] = useState(today);
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [label, setLabel] = useState("");
-  const [calories, setCalories] = useState("");
   const [busy, setBusy] = useState(false);
   const paid = isProAccess(access);
 
@@ -93,31 +81,9 @@ export function PlanPanel({
     }
   }, []);
 
-  const loadEntries = useCallback(async () => {
-    if (!paid) {
-      setEntries([]);
-      return;
-    }
-    try {
-      const { data, error } = await createClient()
-        .from("summer_calorie_entries")
-        .select("id,label,calories")
-        .eq("day", day)
-        .order("created_at");
-      if (error) throw error;
-      setEntries(data || []);
-    } catch {
-      setMessage("Não foi possível carregar seus registros. Tente novamente.");
-      setEntries([]);
-    }
-  }, [day, paid]);
-
   useEffect(() => {
     void loadPlanData();
   }, [loadPlanData]);
-  useEffect(() => {
-    void loadEntries();
-  }, [loadEntries]);
 
   async function requestReview() {
     if (busy) return;
@@ -159,50 +125,6 @@ export function PlanPanel({
     }
   }
 
-  async function add(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy || !label.trim()) return;
-    setBusy(true);
-    setMessage("");
-    try {
-      const { error } = await createClient()
-        .from("summer_calorie_entries")
-        .insert({ day, label: label.trim(), calories: Number(calories) });
-      if (error) throw error;
-      setLabel("");
-      setCalories("");
-      await loadEntries();
-    } catch {
-      setMessage(
-        "Não foi possível salvar. Confira sua conexão e se o Summer PRO continua ativo.",
-      );
-      onRefresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function remove(id: string) {
-    if (busy || !window.confirm("Excluir este registro?")) return;
-    setBusy(true);
-    try {
-      const { data, error } = await createClient()
-        .from("summer_calorie_entries")
-        .delete()
-        .eq("id", id)
-        .select("id");
-      if (error || !data?.length) throw error;
-      await loadEntries();
-    } catch {
-      setMessage(
-        "Não foi possível excluir. Verifique a conexão e a validade do plano.",
-      );
-      onRefresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const checkoutPlan = request?.subscription_plan || selectedPlan;
   const checkoutAmount =
     request?.amount_cents ||
@@ -237,6 +159,15 @@ export function PlanPanel({
           Atualizar
         </button>
       </header>
+
+      {paid && <ProWorkspace onRefresh={onRefresh} />}
+
+      {paid && (
+        <div className="subscription-section-heading">
+          <p className="eyebrow">SUA ASSINATURA</p>
+          <h3>Plano e renovação</h3>
+        </div>
+      )}
 
       <div className="pricing-grid">
         <article className="pricing-card free-card">
@@ -388,79 +319,7 @@ export function PlanPanel({
         {message && <p className="notice">{message}</p>}
       </div>
 
-      {paid ? (
-        <section className="calorie-card nutrition-card">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">NUTRIÇÃO SUMMER PRO</p>
-              <h3>
-                {entries.reduce((total, entry) => total + entry.calories, 0)}{" "}
-                kcal registradas
-              </h3>
-              <p>
-                Seu registro nutricional atual permanece disponível enquanto os
-                novos recursos inteligentes são adicionados.
-              </p>
-            </div>
-            <label>
-              Dia
-              <input
-                type="date"
-                required
-                value={day}
-                onChange={(event) => event.target.value && setDay(event.target.value)}
-              />
-            </label>
-          </div>
-          <form className="calorie-form" onSubmit={add}>
-            <label>
-              Alimento ou refeição
-              <input
-                required
-                maxLength={100}
-                placeholder="Ex.: Almoço"
-                value={label}
-                onChange={(event) => setLabel(event.target.value)}
-              />
-            </label>
-            <label>
-              Calorias (kcal)
-              <input
-                required
-                type="number"
-                min={1}
-                max={10000}
-                value={calories}
-                onChange={(event) => setCalories(event.target.value)}
-              />
-            </label>
-            <button className="primary-button" disabled={busy}>
-              <Plus size={16} />
-              ADICIONAR
-            </button>
-          </form>
-          <div className="workout-list">
-            {entries.map((entry) => (
-              <div className="workout-row" key={entry.id}>
-                <Check size={18} />
-                <div className="workout-copy">
-                  <strong>{entry.label}</strong>
-                  <span>{entry.calories} kcal</span>
-                </div>
-                <button
-                  className="icon-button"
-                  disabled={busy}
-                  aria-label={`Excluir ${entry.label}`}
-                  onClick={() => void remove(entry.id)}
-                >
-                  <Trash2 size={17} />
-                </button>
-              </div>
-            ))}
-          </div>
-          {!entries.length && <p>Nenhum registro neste dia.</p>}
-        </section>
-      ) : (
+      {!paid && (
         <section className="pro-preview-card">
           <div className="pro-preview-icon">
             <Sparkles size={26} />

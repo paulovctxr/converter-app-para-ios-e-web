@@ -30,7 +30,7 @@ test('real Postgres permissions, subscriptions, PIX review and data isolation', 
   assert.ok(publicFunctions.rows.length >= 12)
   assert.ok(publicFunctions.rows.every(fn => !fn.prosecdef), 'public RPCs must not run with elevated database privileges')
 
-  const privateFunctions = await db.query(`select p.proname,p.prosecdef from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='summer_private' and p.proname in ('is_admin','admin_students','admin_set_subscription','request_subscription','admin_review_subscription_request')`)
+  const privateFunctions = await db.query(`select p.proname,p.prosecdef from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='summer_private' and p.proname in ('is_admin','admin_students','admin_set_subscription','request_subscription','admin_review_subscription_request','nutrition_access','begin_nutrition_generation')`)
   assert.ok(privateFunctions.rows.every(fn => fn.prosecdef), 'privileged helpers stay in the private schema')
 
   async function asUser(id, role = 'authenticated') {
@@ -80,6 +80,26 @@ test('real Postgres permissions, subscriptions, PIX review and data isolation', 
     assert.equal(access.subscription_status, 'pro')
     assert.equal(access.subscription_plan, 'monthly')
     assert.equal(access.plan, 'plus')
+  })
+
+  await t.test('nutrition AI data and the exercise library are enforced as PRO on the database', async () => {
+    await asUser(alice)
+    await db.query(`insert into public.summer_nutrition_profiles(goal,age,height_cm,weight_kg,activity_level,dietary_preference,meals_per_day,water_target_ml) values ('gain_muscle',25,175,75,'moderate','balanced',4,2600)`)
+    assert.equal((await db.query('select * from public.summer_nutrition_profiles')).rows.length, 1)
+    assert.ok((await db.query('select * from public.summer_exercise_library')).rows.length >= 30)
+    const access = await scalar('select public.summer_get_nutrition_access()')
+    assert.equal(access.is_pro, true)
+    assert.equal(access.monthly_limit, 4)
+    const reservation = await scalar('select public.summer_begin_nutrition_generation()')
+    assert.ok(reservation.generation_id)
+    assert.equal(reservation.remaining, 3)
+    await assert.rejects(() => db.query('select * from public.summer_nutrition_generations'), /permission denied/)
+    await assert.rejects(() => db.query(`insert into public.summer_meal_plans(user_id,profile_snapshot,targets,days,shopping_list) values ('${alice}','{}','{}','[]','[]')`), /permission denied/)
+
+    await asUser(bob)
+    assert.equal((await db.query('select * from public.summer_exercise_library')).rows.length, 0)
+    await assert.rejects(() => db.query(`insert into public.summer_nutrition_profiles(goal,age,height_cm,weight_kg,activity_level,dietary_preference,meals_per_day,water_target_ml) values ('maintain',25,170,70,'moderate','balanced',4,2500)`), /row-level security/)
+    await assert.rejects(() => db.query('select public.summer_begin_nutrition_generation()'), /Summer PRO/)
   })
 
   await t.test('PRO data is enforced by RLS, including expiration and cancellation', async () => {
