@@ -1,6 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { AuthScreen } from '@/components/auth-screen'
+import { createClient } from '@/lib/supabase/client'
 import {
   Activity,
   Bell,
@@ -34,11 +36,23 @@ const bars = [34, 52, 45, 68, 58, 76, 88]
 const days = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
 
 export default function Page() {
+  const [user, setUser] = useState<import('@supabase/supabase-js').User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('Início')
   const [showForm, setShowForm] = useState(false)
   const [workouts, setWorkouts] = useState(initialWorkouts)
   const [completed, setCompleted] = useState(false)
   const [form, setForm] = useState({ title: '', focus: '', exercises: '3', duration: '45 min' })
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => { setUser(data.user); setAuthLoading(false) })
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null))
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
+  if (authLoading) return <main className="auth-shell"><div className="auth-loading">Carregando seu espaço Summer Fit...</div></main>
+  if (!user) return <AuthScreen />
 
   const progress = useMemo(() => (completed ? 80 : 60), [completed])
 
@@ -62,7 +76,7 @@ export default function Page() {
     <main className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand"><img src="/summer-fit-logo.webp" alt="Summer Fit" /><span>SUMMER FIT</span></div>
-        <div className="sidebar-profile"><div className="avatar">JP</div><div><strong>João Paulo</strong><small>Plano Premium</small></div><MoreHorizontal size={18} /></div>
+        <div className="sidebar-profile"><div className="avatar">JP</div><div><strong>{user.user_metadata?.name || 'João Paulo'}</strong><small>Plano Premium</small></div><button className="profile-logout" onClick={() => createClient().auth.signOut()} aria-label="Sair"><MoreHorizontal size={18} /></button></div>
         <nav className="desktop-nav" aria-label="Navegação principal">
           {navItems.map(({ label, icon: Icon }) => <button key={label} className={activeTab === label ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab(label)}><Icon size={19} />{label}</button>)}
         </nav>
