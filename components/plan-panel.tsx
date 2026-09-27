@@ -12,7 +12,6 @@ import {
   Sparkles,
   Utensils,
 } from "lucide-react";
-import { ProWorkspace } from "@/components/pro-workspace";
 import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_PLAN_CONFIG,
@@ -40,9 +39,11 @@ function date(value: string | null | undefined) {
 export function PlanPanel({
   access,
   onRefresh,
+  onOpenNutrition,
 }: {
   access: Access | null;
   onRefresh: () => void;
+  onOpenNutrition: () => void;
 }) {
   const [config, setConfig] = useState<PlanConfig>(DEFAULT_PLAN_CONFIG);
   const [selectedPlan, setSelectedPlan] =
@@ -160,7 +161,7 @@ export function PlanPanel({
         </button>
       </header>
 
-      {paid && <ProWorkspace onRefresh={onRefresh} />}
+      {paid && <div className="subscription-tools-link"><div><strong>Seu espaço PRO está liberado</strong><p>Acesse seu cardápio, água, diário e biblioteca na aba Nutrição.</p></div><button className="primary-button" onClick={onOpenNutrition}><Utensils size={17} />Abrir meus recursos</button></div>}
 
       {paid && (
         <div className="subscription-section-heading">
@@ -196,7 +197,7 @@ export function PlanPanel({
         </article>
 
         <article className="pricing-card pro-card">
-          <span className="best-value">MELHOR CUSTO-BENEFÍCIO</span>
+          <span className="best-value">{selectedPlan === "annual" ? "MELHOR CUSTO-BENEFÍCIO · ANUAL" : "SEU PRÓXIMO PASSO"}</span>
           <div className="pricing-card-top">
             <div>
               <span className="plan-kicker">⭐ EXPERIÊNCIA COMPLETA</span>
@@ -207,6 +208,7 @@ export function PlanPanel({
           <div className="billing-toggle" aria-label="Escolha a periodicidade">
             <button
               className={selectedPlan === "monthly" ? "active" : ""}
+              aria-pressed={selectedPlan === "monthly"}
               onClick={() => setSelectedPlan("monthly")}
               type="button"
             >
@@ -214,6 +216,7 @@ export function PlanPanel({
             </button>
             <button
               className={selectedPlan === "annual" ? "active" : ""}
+              aria-pressed={selectedPlan === "annual"}
               onClick={() => setSelectedPlan("annual")}
               type="button"
             >
@@ -309,8 +312,8 @@ export function PlanPanel({
             </button>
           )}
           <small>
-            O frontend não libera assinaturas. A confirmação acontece no banco
-            após a conferência do pagamento.
+            A liberação acontece após a conferência do pagamento. Não há
+            cobrança automática no PIX.
           </small>
         </section>
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Apple,
   BookOpen,
@@ -20,6 +20,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { nutritionDraft, parseNutritionDraft, type NutritionDraft } from "@/lib/nutrition-draft";
 import {
   ACTIVITY_LABELS,
   DEFAULT_NUTRITION_PROFILE,
@@ -103,12 +104,13 @@ async function edgeError(error: unknown) {
   return "Não foi possível gerar o cardápio. Tente novamente em instantes.";
 }
 
-export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
+export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => void; active?: boolean }) {
   const [activeTool, setActiveTool] = useState<Tool>("overview");
   const [profile, setProfile] = useState<NutritionProfile | null>(null);
-  const [draft, setDraft] = useState<NutritionProfile>(
-    DEFAULT_NUTRITION_PROFILE,
+  const [draft, setDraft] = useState<NutritionDraft>(
+    () => nutritionDraft(DEFAULT_NUTRITION_PROFILE),
   );
+  const [profileError, setProfileError] = useState("");
   const [plan, setPlan] = useState<MealPlan | null>(null);
   const [access, setAccess] = useState<NutritionAccess | null>(null);
   const [selectedPlanDay, setSelectedPlanDay] = useState(0);
@@ -123,11 +125,19 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
   const [checkedShopping, setCheckedShopping] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [libraryLoading, setLibraryLoading] = useState(false);
+  const libraryState = useRef<"idle" | "loading" | "loaded" | "error">("idle");
+  const [libraryError, setLibraryError] = useState(false);
+  const [coreError, setCoreError] = useState(false);
+  const [dayLoading, setDayLoading] = useState(false);
+  const [dayError, setDayError] = useState(false);
+  const dayController = useRef<AbortController | null>(null);
+  const operation = useRef(false);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
 
   const loadCore = useCallback(async () => {
     setLoading(true);
+    setCoreError(false);
     setMessage("");
     try {
       const supabase = createClient();
@@ -153,10 +163,11 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
       if (accessResult.error) throw accessResult.error;
       const savedProfile = profileResult.data as NutritionProfile | null;
       setProfile(savedProfile);
-      if (savedProfile) setDraft(savedProfile);
+      if (savedProfile) setDraft(nutritionDraft(savedProfile));
       setPlan(readMealPlan(planResult.data));
       setAccess(accessResult.data as NutritionAccess);
     } catch {
+      setCoreError(true);
       setMessage(
         "Não foi possível carregar o painel PRO. Atualize a página e tente novamente.",
       );
@@ -166,6 +177,13 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
   }, []);
 
   const loadDay = useCallback(async () => {
+    dayController.current?.abort();
+    const controller = new AbortController();
+    dayController.current = controller;
+    setDayLoading(true);
+    setDayError(false);
+    setEntries([]);
+    setWaterEntries([]);
     try {
       const supabase = createClient();
       const [foodResult, waterResult] = await Promise.all([
@@ -175,27 +193,36 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
             "id,label,meal_type,calories,protein_g,carbs_g,fat_g",
           )
           .eq("day", day)
-          .order("created_at"),
+          .order("created_at")
+          .abortSignal(controller.signal),
         supabase
           .from("summer_water_entries")
           .select("id,amount_ml,created_at")
           .eq("day", day)
-          .order("created_at"),
+          .order("created_at")
+          .abortSignal(controller.signal),
       ]);
       if (foodResult.error) throw foodResult.error;
       if (waterResult.error) throw waterResult.error;
+      if (controller.signal.aborted) return;
       setEntries((foodResult.data || []) as NutritionEntry[]);
       setWaterEntries((waterResult.data || []) as WaterEntry[]);
     } catch {
+      if (controller.signal.aborted) return;
+      setDayError(true);
       setEntries([]);
       setWaterEntries([]);
       setMessage("Não foi possível carregar os registros deste dia.");
+    } finally {
+      if (!controller.signal.aborted) setDayLoading(false);
     }
   }, [day]);
 
-  const loadLibrary = useCallback(async () => {
-    if (exercises.length || libraryLoading) return;
+  const loadLibrary = useCallback(async (retry = false) => {
+    if (libraryState.current === "loading" || libraryState.current === "loaded" || (libraryState.current === "error" && !retry)) return;
+    libraryState.current = "loading";
     setLibraryLoading(true);
+    setLibraryError(false);
     try {
       const { data, error } = await createClient()
         .from("summer_exercise_library")
@@ -206,25 +233,29 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
         .order("name");
       if (error) throw error;
       setExercises((data || []) as ExerciseLibraryItem[]);
+      libraryState.current = "loaded";
     } catch {
+      libraryState.current = "error";
+      setLibraryError(true);
       setMessage("Não foi possível carregar a biblioteca de exercícios.");
     } finally {
       setLibraryLoading(false);
     }
-  }, [exercises.length, libraryLoading]);
+  }, []);
 
   useEffect(() => {
-    void loadCore();
-  }, [loadCore]);
+    if (active) void loadCore();
+  }, [active, loadCore]);
   useEffect(() => {
-    void loadDay();
-  }, [loadDay]);
+    if (active && activeTool === "diary") void loadDay();
+    return () => dayController.current?.abort();
+  }, [active, activeTool, loadDay]);
   useEffect(() => {
-    if (activeTool === "library") void loadLibrary();
-  }, [activeTool, loadLibrary]);
+    if (active && activeTool === "library") void loadLibrary();
+  }, [active, activeTool, loadLibrary]);
 
   const targets = useMemo(
-    () => plan?.targets || calculateNutritionTargets(profile || draft),
+    () => plan?.targets || (profile ? calculateNutritionTargets(profile) : calculateNutritionTargets(DEFAULT_NUTRITION_PROFILE)),
     [draft, plan, profile],
   );
   const totals = useMemo(() => nutritionTotals(entries), [entries]);
@@ -251,26 +282,17 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
     );
   }, [exerciseSearch, exercises, muscleGroup]);
 
-  function validProfile(value: NutritionProfile) {
-    return (
-      value.age >= 18 &&
-      value.age <= 90 &&
-      value.height_cm >= 120 &&
-      value.height_cm <= 230 &&
-      value.weight_kg >= 35 &&
-      value.weight_kg <= 300 &&
-      value.meals_per_day >= 3 &&
-      value.meals_per_day <= 6 &&
-      value.water_target_ml >= 1000 &&
-      value.water_target_ml <= 6000
-    );
-  }
-
   async function saveProfile(generate: boolean) {
-    if (busy || !validProfile(draft)) {
-      setMessage("Revise os dados do perfil nutricional.");
+    if (operation.current) return;
+    setProfileError("");
+    let parsed: NutritionProfile;
+    try {
+      parsed = parseNutritionDraft(draft);
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : "Revise os dados do perfil nutricional.");
       return;
     }
+    operation.current = true;
     setBusy(generate ? "generate" : "profile");
     setMessage("");
     try {
@@ -278,13 +300,13 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
       const { data: auth, error: authError } = await supabase.auth.getUser();
       if (authError || !auth.user) throw authError;
       const normalized: NutritionProfile = {
-        ...draft,
+        ...parsed,
         user_id: auth.user.id,
-        age: Math.round(draft.age),
-        height_cm: Math.round(draft.height_cm * 10) / 10,
-        weight_kg: Math.round(draft.weight_kg * 10) / 10,
-        meals_per_day: Math.round(draft.meals_per_day),
-        water_target_ml: Math.round(draft.water_target_ml),
+        age: parsed.age,
+        height_cm: Math.round(parsed.height_cm * 10) / 10,
+        weight_kg: Math.round(parsed.weight_kg * 10) / 10,
+        meals_per_day: parsed.meals_per_day,
+        water_target_ml: parsed.water_target_ml,
         allergies: draft.allergies.trim(),
         disliked_foods: draft.disliked_foods.trim(),
         updated_at: new Date().toISOString(),
@@ -294,7 +316,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
         .upsert(normalized, { onConflict: "user_id" });
       if (error) throw error;
       setProfile(normalized);
-      setDraft(normalized);
+      setDraft(nutritionDraft(normalized));
       if (!generate) {
         setMessage("Perfil nutricional salvo.");
         return;
@@ -310,12 +332,14 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
       const generated = readMealPlan(data.plan);
       if (!generated) throw new Error("invalid_plan");
       setPlan(generated);
+      setCheckedShopping([]);
       setAccess((current) =>
         current
           ? {
               ...current,
               used: current.used + 1,
               remaining: Math.max(0, current.remaining - 1),
+              allowed: current.is_pro && current.remaining > 1,
             }
           : current,
       );
@@ -328,6 +352,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
       );
       onRefresh();
     } finally {
+      operation.current = false;
       setBusy("");
     }
   }
@@ -423,11 +448,8 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
       <div className="pro-workspace-heading">
         <div>
           <p className="eyebrow">SUAS FERRAMENTAS PRO</p>
-          <h3>Nutrição, evolução e execução em um só lugar</h3>
-          <p>
-            Agora estes recursos são funcionais e ficam sincronizados com sua
-            conta.
-          </p>
+          <h2 className="panel-title">Nutrição, do seu jeito.</h2>
+          <p>Planeje suas refeições. Cuide de você, um dia de cada vez.</p>
         </div>
         {access && (
           <span className="ai-usage-badge">
@@ -443,6 +465,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
             key={id}
             type="button"
             className={activeTool === id ? "active" : ""}
+            aria-pressed={activeTool === id}
             onClick={() => setActiveTool(id)}
           >
             <Icon size={17} />
@@ -460,11 +483,13 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
           <LoaderCircle className="spin" size={24} />
           Carregando seu espaço PRO...
         </div>
+      ) : coreError ? (
+        <div className="empty-state"><h3>Vamos tentar de novo?</h3><p>Seu painel não pôde ser carregado. Seus dados continuam salvos.</p><button className="secondary-button" onClick={() => void loadCore()}><RefreshCw size={16} />Tentar novamente</button></div>
       ) : (
         <>
           {activeTool === "overview" && (
             <div className="pro-overview">
-              <div className="pro-metric-grid">
+              {profile && <div className="pro-metric-grid">
                 <article>
                   <Apple size={20} />
                   <span>Meta calórica</span>
@@ -496,7 +521,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                     <small>{plan ? ` · ${dateLabel(plan.created_at)}` : ""}</small>
                   </strong>
                 </article>
-              </div>
+              </div>}
 
               <section className="pro-action-card featured">
                 <div className="pro-action-icon">
@@ -524,8 +549,12 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                 )}
               </section>
 
+              <details className="nutrition-profile-details" open={!profile}>
+                <summary><span>{profile ? "Ajustar meu perfil e preferências" : "Primeiro, vamos conhecer seu objetivo"}</span><span>{profile ? "Editar" : "Preencher perfil"}</span></summary>
               <form
+                id="nutrition-profile"
                 className="nutrition-profile-form"
+                noValidate
                 onSubmit={(event) => {
                   event.preventDefault();
                   void saveProfile(true);
@@ -560,29 +589,30 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   <label>
                     Idade
                     <input
-                      type="number"
-                      min={18}
-                      max={90}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ex.: 22"
+                      maxLength={3}
                       required
                       value={draft.age}
                       onChange={(event) =>
-                        setDraft({ ...draft, age: Number(event.target.value) })
+                        setDraft({ ...draft, age: event.target.value })
                       }
                     />
                   </label>
                   <label>
                     Altura (cm)
                     <input
-                      type="number"
-                      min={120}
-                      max={230}
-                      step="0.1"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="Ex.: 175"
+                      maxLength={6}
                       required
                       value={draft.height_cm}
                       onChange={(event) =>
                         setDraft({
                           ...draft,
-                          height_cm: Number(event.target.value),
+                          height_cm: event.target.value,
                         })
                       }
                     />
@@ -590,16 +620,16 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   <label>
                     Peso (kg)
                     <input
-                      type="number"
-                      min={35}
-                      max={300}
-                      step="0.1"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="Ex.: 80,5"
+                      maxLength={6}
                       required
                       value={draft.weight_kg}
                       onChange={(event) =>
                         setDraft({
                           ...draft,
-                          weight_kg: Number(event.target.value),
+                          weight_kg: event.target.value,
                         })
                       }
                     />
@@ -644,15 +674,16 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   <label>
                     Refeições por dia
                     <input
-                      type="number"
-                      min={3}
-                      max={6}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="De 3 a 6"
+                      maxLength={1}
                       required
                       value={draft.meals_per_day}
                       onChange={(event) =>
                         setDraft({
                           ...draft,
-                          meals_per_day: Number(event.target.value),
+                          meals_per_day: event.target.value,
                         })
                       }
                     />
@@ -660,16 +691,16 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   <label>
                     Meta de água (ml)
                     <input
-                      type="number"
-                      min={1000}
-                      max={6000}
-                      step={100}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ex.: 2500"
+                      maxLength={4}
                       required
                       value={draft.water_target_ml}
                       onChange={(event) =>
                         setDraft({
                           ...draft,
-                          water_target_ml: Number(event.target.value),
+                          water_target_ml: event.target.value,
                         })
                       }
                     />
@@ -700,6 +731,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                     />
                   </label>
                 </div>
+                {profileError && <p className="nutrition-field-error" role="alert">{profileError}</p>}
                 <div className="nutrition-form-actions">
                   <button
                     type="button"
@@ -722,10 +754,16 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   </button>
                 </div>
                 <small className="nutrition-disclaimer">
-                  Sugestões gerais para adultos. Não substituem nutricionista ou
+                  Seus dados de preferências e medidas são enviados à IA para criar sugestões. Não enviamos seu nome ou e-mail. Sugestões gerais para adultos. Não substituem nutricionista ou
                   orientação médica. Confira sempre ingredientes e alergias.
                 </small>
               </form>
+              </details>
+              {profile && <div className="nutrition-quick-actions">
+                <button className="secondary-button" onClick={() => setActiveTool("diary")}><Droplets size={18} />Registrar alimentação e água</button>
+                <button className="secondary-button" onClick={() => setActiveTool("shopping")}><ShoppingBasket size={18} />Minha lista de compras</button>
+              </div>}
+              {access?.remaining === 0 && <p className="notice">Você usou os cardápios disponíveis neste mês. A cota renova em {dateLabel(access.period_ends_at)}. Seu cardápio atual continua disponível.</p>}
             </div>
           )}
 
@@ -768,6 +806,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                       <button
                         key={item.day}
                         className={selectedPlanDay === index ? "active" : ""}
+                        aria-pressed={selectedPlanDay === index}
                         onClick={() => setSelectedPlanDay(index)}
                         type="button"
                       >
@@ -775,6 +814,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                       </button>
                     ))}
                   </div>
+                  <p className="nutrition-disclaimer">Confira ingredientes, porções e alergias antes de seguir as sugestões. Em caso de condição de saúde, gestação ou necessidade alimentar específica, consulte um profissional.</p>
                   {selectedDay && (
                     <>
                       <div className="day-target-summary">
@@ -837,10 +877,14 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   <input
                     type="date"
                     value={day}
+                    disabled={Boolean(busy)}
                     onChange={(event) => event.target.value && setDay(event.target.value)}
                   />
                 </label>
               </div>
+              {!profile && <p className="notice">Complete e salve seu perfil em Visão geral para personalizar as metas.</p>}
+              {dayLoading && <p role="status" className="notice">Carregando os registros do dia…</p>}
+              {dayError && <button className="secondary-button" onClick={() => void loadDay()}>Tentar carregar novamente</button>}
               <div className="macro-progress-grid">
                 {[
                   {
@@ -871,7 +915,7 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   <article key={item.label}>
                     <span>{item.label}</span>
                     <strong>
-                      {item.value} <small>/ {item.target} {item.unit}</small>
+                      {dayLoading ? "—" : item.value} <small>/ {profile ? item.target : "—"} {item.unit}</small>
                     </strong>
                     <div className="macro-track">
                       <i style={{ width: percentage(item.value, item.target) }} />
@@ -883,8 +927,8 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
               <section className="water-card">
                 <div className="water-ring">
                   <Droplets size={24} />
-                  <strong>{waterTotal} ml</strong>
-                  <span>de {targets.water_ml} ml</span>
+                  <strong>{dayLoading ? "—" : waterTotal} ml</strong>
+                  <span>{profile ? `de ${targets.water_ml} ml` : "Meta ainda não definida"}</span>
                 </div>
                 <div className="water-controls">
                   <h5>Registrar água</h5>
@@ -1201,7 +1245,8 @@ export function ProWorkspace({ onRefresh }: { onRefresh: () => void }) {
                   ))}
                 </div>
               )}
-              {!libraryLoading && !visibleExercises.length && (
+              {libraryError && <button className="secondary-button" onClick={() => void loadLibrary(true)}>Tentar carregar biblioteca</button>}
+              {!libraryLoading && !libraryError && !visibleExercises.length && (
                 <p>Nenhum exercício encontrado com esse filtro.</p>
               )}
             </div>

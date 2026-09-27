@@ -1,4 +1,5 @@
 "use client";
+import { useModalDialog } from "@/lib/use-modal-dialog";
 
 import {
   BarChart3,
@@ -35,9 +36,11 @@ export function ProPaywall({
   onSubscribe: () => void;
   config?: PlanConfig;
 }) {
+  const dialog = useModalDialog(onClose);
   return (
     <div className="paywall-overlay" role="presentation">
       <section
+        ref={dialog}
         className="paywall-dialog"
         role="dialog"
         aria-modal="true"

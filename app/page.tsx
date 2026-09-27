@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import type { User } from "@supabase/supabase-js";
-import { PlanPanel } from "@/components/plan-panel";
-import { ProPaywall } from "@/components/pro-paywall";
-import { ProProgressInsights } from "@/components/pro-progress-insights";
-import { WorkoutImporter } from "@/components/workout-importer";
+import { PanelLoading } from "@/components/panel-loading";
+import { RestTimer, WorkoutClock } from "@/components/workout-clock";
+import { TAB_PATHS, tabFromHash, type AppTab } from "@/lib/navigation";
+const PlanPanel = dynamic(() => import("@/components/plan-panel").then((module) => module.PlanPanel), { loading: PanelLoading });
+const ProWorkspace = dynamic(() => import("@/components/pro-workspace").then((module) => module.ProWorkspace), { loading: PanelLoading });
+const ProPaywall = dynamic(() => import("@/components/pro-paywall").then((module) => module.ProPaywall));
+const ProProgressInsights = dynamic(() => import("@/components/pro-progress-insights").then((module) => module.ProProgressInsights), { loading: PanelLoading });
+const WorkoutImporter = dynamic(() => import("@/components/workout-importer").then((module) => module.WorkoutImporter), { loading: PanelLoading });
 import {
   effectiveExpiresAt,
   effectiveStatus,
@@ -27,6 +32,7 @@ import {
 } from "@/lib/fitness";
 import {
   ArrowRight,
+  Camera,
   Crown,
   ShieldCheck,
   Check,
@@ -49,12 +55,11 @@ import {
   X,
 } from "lucide-react";
 
-type Tab = "Início" | "Treinos" | "Progresso" | "Perfil" | "Plano";
 const navItems = [
   { label: "Início", icon: Home },
   { label: "Treinos", icon: Dumbbell },
+  { label: "Nutrição", icon: Utensils },
   { label: "Progresso", icon: TrendingUp },
-  { label: "Plano", icon: Crown },
   { label: "Perfil", icon: UserRound },
 ] as const;
 const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -148,7 +153,30 @@ export default function Page() {
 }
 
 function Dashboard({ user }: { user: User }) {
-  const [activeTab, setActiveTab] = useState<Tab>("Início");
+  const [activeTab, updateActiveTab] = useState<AppTab>("Início");
+  const [nutritionVisited, setNutritionVisited] = useState(false);
+  const [online, setOnline] = useState(true);
+  const setActiveTab = useCallback((tab: AppTab) => {
+    updateActiveTab(tab);
+    if (window.location.hash !== `#${TAB_PATHS[tab]}`) window.history.pushState(null, "", `#${TAB_PATHS[tab]}`);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+  useEffect(() => {
+    const syncTab = () => updateActiveTab(tabFromHash(window.location.hash));
+    const syncOnline = () => setOnline(navigator.onLine);
+    syncTab(); syncOnline();
+    window.addEventListener("popstate", syncTab);
+    window.addEventListener("hashchange", syncTab);
+    window.addEventListener("online", syncOnline);
+    window.addEventListener("offline", syncOnline);
+    return () => {
+      window.removeEventListener("popstate", syncTab);
+      window.removeEventListener("hashchange", syncTab);
+      window.removeEventListener("online", syncOnline);
+      window.removeEventListener("offline", syncOnline);
+    };
+  }, []);
+  useEffect(() => { if (activeTab === "Nutrição") setNutritionVisited(true); }, [activeTab]);
   const [fitness, setFitness] = useState<FitnessData>(emptyFitness);
   const [draft, setDraft] = useState<Workout | null>(null);
   const [showImporter, setShowImporter] = useState(false);
@@ -158,7 +186,6 @@ function Dashboard({ user }: { user: User }) {
     startedAt: number;
   } | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
-  const [elapsed, setElapsed] = useState(0);
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
   const [notice, setNotice] = useState("");
@@ -167,20 +194,21 @@ function Dashboard({ user }: { user: User }) {
   const [goal, setGoal] = useState(fitness.goal);
   const [search, setSearch] = useState("");
   const [dataReady, setDataReady] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [access, setAccess] = useState<Access | null>(null);
   const paid = isProAccess(access);
-  async function refreshAccess() {
+  const refreshAccess = useCallback(async () => {
     try {
       const { data, error } = await createClient().rpc("summer_get_access");
       setAccess(error ? null : (data as Access));
     } catch {
       setAccess(null);
     }
-  }
+  }, []);
   useEffect(() => {
     void refreshAccess();
     const refresh = () => {
-      void refreshAccess();
+      if (!document.hidden && navigator.onLine) void refreshAccess();
     };
     window.addEventListener("focus", refresh);
     const timer = window.setInterval(refresh, 60000);
@@ -188,8 +216,8 @@ function Dashboard({ user }: { user: User }) {
       window.removeEventListener("focus", refresh);
       window.clearInterval(timer);
     };
-  }, []);
-  const summary = weekSummary(fitness.sessions);
+  }, [refreshAccess]);
+  const summary = useMemo(() => weekSummary(fitness.sessions), [fitness.sessions]);
   const displayName = String(
     user.user_metadata?.name || user.email?.split("@")[0] || "Atleta",
   );
@@ -209,7 +237,8 @@ function Dashboard({ user }: { user: User }) {
       .toLocaleLowerCase("pt-BR")
       .includes(search.toLocaleLowerCase("pt-BR")),
   );
-  async function loadFitness() {
+  const loadFitness = useCallback(async () => {
+    setDataLoading(true);
     try {
       const { data, error } = await createClient()
         .from("summer_fitness_state")
@@ -226,25 +255,20 @@ function Dashboard({ user }: { user: User }) {
         "Não foi possível carregar suas fichas. Tente atualizar em instantes.",
       );
       setDataReady(false);
+    } finally {
+      setDataLoading(false);
     }
-  }
-  useEffect(() => {
-    void loadFitness();
   }, [user.id]);
   useEffect(() => {
+    void loadFitness();
+  }, [loadFitness]);
+  useEffect(() => {
     if (!active) return;
-    const tick = () =>
-      setElapsed(
-        Math.max(0, Math.floor((Date.now() - active.startedAt) / 1000)),
-      );
-    tick();
-    const interval = window.setInterval(tick, 1000);
     const beforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
     };
     window.addEventListener("beforeunload", beforeUnload);
     return () => {
-      window.clearInterval(interval);
       window.removeEventListener("beforeunload", beforeUnload);
     };
   }, [active]);
@@ -421,7 +445,6 @@ function Dashboard({ user }: { user: User }) {
     }
     setActive({ workout, startedAt: Date.now() });
     setChecked([]);
-    setElapsed(0);
     setNotice("Treino iniciado. Marque os exercícios conforme terminar.");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -529,14 +552,19 @@ function Dashboard({ user }: { user: User }) {
       </a>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img src="/summer-fit-logo.webp" alt="" width={38} height={38} />
-          <span>SUMMER FIT</span>
+          <img
+            className="sidebar-brand-logo"
+            src="/summer-fit-brand.jpeg"
+            alt="Summer Fit — A academia que vai esquentar o seu dia"
+            width={200}
+            height={56}
+          />
         </div>
         <div className="sidebar-profile">
           <div className="avatar">{initials}</div>
           <div>
             <strong>{displayName}</strong>
-            <small>Seu espaço de treino</small>
+            <small>{paid ? "Summer PRO" : "Summer Grátis"}</small>
           </div>
         </div>
         <nav className="desktop-nav" aria-label="Navegação principal">
@@ -559,15 +587,9 @@ function Dashboard({ user }: { user: User }) {
               Administrar alunos
             </a>
           )}
-          <div className="sidebar-note">
-            <Sun size={22} />
-            <strong>
-              Constância vale mais
-              <br />
-              que pressa.
-            </strong>
-            <span>Seu próximo treino conta.</span>
-          </div>
+          <button className="sidebar-plan" onClick={() => setActiveTab("Plano")}>
+            <Crown size={20} /><span><strong>{paid ? "Meu Summer PRO" : "Conheça o Summer PRO"}</strong><small>{paid ? "Plano e renovação" : "Mais cuidado com sua evolução"}</small></span><ChevronRight size={16} />
+          </button>
           <button className="help-link" onClick={() => setShowHelp(!showHelp)}>
             <CircleHelp size={17} />
             Como usar
@@ -585,10 +607,12 @@ function Dashboard({ user }: { user: User }) {
       <section className="content-area">
         <header className="topbar">
           <div className="topbar-location">
-            <span className="status-dot" />
-            SUMMER FIT <span className="muted">/</span> {activeTab}
+            <img className="header-academy-logo" src="/summer-fit-brand.jpeg" alt="Summer Fit" width={180} height={50} />
+            <span className={online ? "status-dot" : "status-dot offline"} />
+            <span className="header-current-tab">{activeTab === "Plano" ? "Planos" : activeTab}</span>
           </div>
           <div className="topbar-actions">
+            <button className="account-plan-badge" onClick={() => setActiveTab("Plano")}><Crown size={14} />{paid ? "PRO" : "Grátis"}</button>
             <button
               className="icon-button"
               onClick={() => setShowHelp(!showHelp)}
@@ -606,7 +630,7 @@ function Dashboard({ user }: { user: User }) {
           </div>
         </header>
         <div className="page-content" id="main-content">
-          <div className="welcome-row">
+          {activeTab === "Início" && <div className="welcome-row">
             <div>
               <p className="eyebrow">
                 {new Date().toLocaleDateString("pt-BR", {
@@ -631,7 +655,8 @@ function Dashboard({ user }: { user: User }) {
               <Plus size={17} />
               Adicionar treino
             </button>
-          </div>
+          </div>}
+          {!online && <p className="notice" role="alert">Você está sem internet. As alterações precisam de conexão para serem salvas.</p>}
           <div aria-live="polite" aria-atomic="true">
             {notice && (
               <div className="notice">
@@ -646,7 +671,8 @@ function Dashboard({ user }: { user: User }) {
               </div>
             )}
           </div>
-          {!dataReady && (
+          {!dataReady && dataLoading && <PanelLoading />}
+          {!dataReady && !dataLoading && (
             <div className="notice">
               Suas fichas ainda não foram carregadas.
               <button
@@ -692,12 +718,7 @@ function Dashboard({ user }: { user: User }) {
                   <p className="eyebrow">EM MOVIMENTO</p>
                   <h2>{active.workout.title}</h2>
                 </div>
-                <span className="timer" aria-label="Tempo decorrido">
-                  {Math.floor(elapsed / 60)
-                    .toString()
-                    .padStart(2, "0")}
-                  :{(elapsed % 60).toString().padStart(2, "0")}
-                </span>
+                <WorkoutClock startedAt={active.startedAt} />
               </div>
               <p>
                 Marque cada exercício quando terminar. {checked.length}/
@@ -733,6 +754,7 @@ function Dashboard({ user }: { user: User }) {
                   </label>
                 ))}
               </div>
+              <RestTimer />
               <div className="session-actions">
                 <button
                   className="primary-button"
@@ -757,7 +779,7 @@ function Dashboard({ user }: { user: User }) {
               </div>
             </section>
           )}
-          {activeTab === "Início" && (
+          {activeTab === "Início" && dataReady && (
             <>
               <section className="hero-card">
                 <div className="hero-content">
@@ -793,6 +815,12 @@ function Dashboard({ user }: { user: User }) {
                 <div className="hero-word" aria-hidden="true">
                   FIT.
                 </div>
+                <img
+                  className="hero-mascot"
+                  src="/summer-fit-mascot.jpeg"
+                  alt=""
+                  aria-hidden="true"
+                />
               </section>
               <div className="stats-grid">
                 <article className="stat-card">
@@ -842,6 +870,10 @@ function Dashboard({ user }: { user: User }) {
                   <p className="neutral">Organizadas e salvas na sua conta</p>
                 </article>
               </div>
+              <div className="home-shortcuts" aria-label="Acesso rápido">
+                <button onClick={openAddWorkout}><span className="shortcut-icon"><Camera size={22} /></span><span><strong>Importar minha ficha</strong><small>Do papel para o celular</small></span><ChevronRight size={18} /></button>
+                <button onClick={() => setActiveTab("Nutrição")}><span className="shortcut-icon"><Utensils size={22} /></span><span><strong>Minha nutrição</strong><small>{paid ? "Cardápio, macros e água" : "Conheça os recursos PRO"}</small></span><ChevronRight size={18} /></button>
+              </div>
               {paid ? (
                 <section className="nutrition-home-card pro-active-home">
                   <div className="nutrition-home-icon">
@@ -857,7 +889,7 @@ function Dashboard({ user }: { user: User }) {
                   </div>
                   <button
                     className="primary-button"
-                    onClick={() => setActiveTab("Plano")}
+                    onClick={() => setActiveTab("Nutrição")}
                   >
                     ABRIR NUTRIÇÃO
                   </button>
@@ -1336,8 +1368,19 @@ function Dashboard({ user }: { user: User }) {
             </section>
           )}
           {activeTab === "Plano" && (
-            <PlanPanel access={access} onRefresh={() => void refreshAccess()} />
+            <PlanPanel access={access} onRefresh={refreshAccess} onOpenNutrition={() => setActiveTab("Nutrição")} />
           )}
+          {paid && (nutritionVisited || activeTab === "Nutrição") && <div hidden={activeTab !== "Nutrição"}>
+            <ProWorkspace onRefresh={refreshAccess} active={activeTab === "Nutrição"} />
+          </div>}
+          {!paid && activeTab === "Nutrição" && <section className="nutrition-locked-page">
+            <span className="pro-hero-icon"><Utensils size={28} /></span>
+            <p className="eyebrow">SUMMER PRO</p><h1>Cuide da alimentação.<br />Evolua no seu ritmo.</h1>
+            <p>Seu cardápio de 7 dias, metas de calorias e macros, água e lista de compras. Tudo em um só lugar.</p>
+            <div className="locked-feature-grid"><span>Cardápio com IA</span><span>Diário alimentar</span><span>Controle de água</span><span>Lista de compras</span></div>
+            <button className="primary-button" onClick={() => setActiveTab("Plano")}><Crown size={18} />Conhecer Summer PRO<ArrowRight size={18} /></button>
+            <small>Seus treinos e a importação por foto continuam gratuitos.</small>
+          </section>}
           {activeTab === "Perfil" && (
             <section className="tab-panel profile-panel">
               <div className="profile-big-avatar">{initials}</div>
@@ -1446,7 +1489,7 @@ function Dashboard({ user }: { user: User }) {
             </section>
           )}
           <footer className="page-footer">
-            SUMMER FIT <span>Feito para acompanhar o seu ritmo.</span>
+            SUMMER FIT <span>A academia que vai esquentar o seu dia.</span><small>Interface 27.09 · revisão 2</small>
           </footer>
         </div>
         <nav className="mobile-nav" aria-label="Navegação mobile">

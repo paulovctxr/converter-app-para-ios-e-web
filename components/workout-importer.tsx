@@ -393,7 +393,7 @@ export function WorkoutImporter({
       >
         <header className="import-header">
           <div>
-            <p className="eyebrow">SUMMER TREINOS</p>
+            <p className="eyebrow">SUMMER FIT</p>
             <h2 id="import-title">
               {step === "choice"
                 ? "Adicionar treino"

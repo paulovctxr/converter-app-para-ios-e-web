@@ -1,13 +1,15 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import './refinements.css'
+import './summer-fit-brand.css'
 
 export const metadata: Metadata = {
-  title: 'Summer Fit — Seu treino começa aqui',
-  description: 'Organize seus treinos, acompanhe seu progresso e evolua com a Summer Fit.',
+  title: 'Summer Fit — Seu treino, agora no celular',
+  description: 'Digitalize sua ficha da academia, registre cargas e acompanhe sua evolução com o Summer Fit.',
   applicationName: 'Summer Fit',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Summer Fit', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'Summer Fit', statusBarStyle: 'black' },
   icons: {
     icon: [
       {
@@ -29,7 +31,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#fffdf7',
+  themeColor: '#111111',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
