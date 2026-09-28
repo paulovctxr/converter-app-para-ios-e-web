@@ -7,6 +7,7 @@ import {
   Copy,
   Crown,
   Droplets,
+  MessageCircle,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -288,11 +289,28 @@ export function PlanPanel({
             Copie a chave, faça o pagamento no aplicativo do seu banco e envie o
             comprovante ao administrador informando o e-mail da sua conta.
           </p>
+          <div className="pix-receiver-note">
+            <strong>Sobre o pagamento</strong>
+            <span>
+              O valor do plano será recebido pelo recepcionista Paulo, da
+              academia, que também é o desenvolvedor da aplicação. Depois do
+              PIX, envie o comprovante para conferência.
+            </span>
+          </div>
           <code>{config.pix_key}</code>
           <button className="secondary-button" onClick={() => void copyPix()}>
             <Copy size={16} />
             Copiar chave PIX
           </button>
+          <a
+            className="secondary-button pix-whatsapp-button"
+            href="https://wa.me/5521974312734?text=Ol%C3%A1%2C%20fiz%20o%20PIX%20do%20Summer%20PRO%20e%20vou%20enviar%20o%20comprovante.%20Meu%20e-mail%20no%20app%20%C3%A9%3A%20"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <MessageCircle size={16} />
+            Enviar comprovante pelo WhatsApp
+          </a>
           {request ? (
             <div className="pending-payment">
               <CalendarDays size={19} />

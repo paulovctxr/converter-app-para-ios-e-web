@@ -333,6 +333,9 @@ body:has(.paywall-overlay) { overflow: hidden; }
 .pix-checkout code { display: block; margin: 13px 0; padding: 13px; border: 1px dashed #d7c36c; border-radius: 10px; background: white; font-size: 13px; overflow-wrap: anywhere; user-select: all; }
 .pix-checkout > .full-button { margin-top: 15px; }
 .pix-checkout > small { display: block; margin-top: 13px; }
+.pix-receiver-note { display: grid; gap: 4px; margin: 15px 0 12px; padding: 13px 14px; border-left: 4px solid #e50916; border-radius: 10px; color: #5c4c16; background: #fff4b8; font-size: 12px; line-height: 1.55; }
+.pix-receiver-note strong { color: #1a1a1a; font-size: 13px; }
+.pix-whatsapp-button { display: inline-flex; width: 100%; margin-top: 10px; justify-content: center; text-decoration: none; }
 .pending-payment { display: flex; align-items: center; gap: 11px; margin-top: 15px; padding: 13px; border-radius: 12px; color: #5c4a00; background: var(--soft-yellow); }
 .pending-payment div { display: grid; gap: 3px; }
 .pending-payment span { font-size: 11px; line-height: 1.5; }
