@@ -13,8 +13,6 @@ import {
   Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import dynamic from 'next/dynamic';
-const CommunityAdmin = dynamic(() => import('./community-admin').then(module => module.CommunityAdmin));
 import {
   DEFAULT_PLAN_CONFIG,
   formatBRL,
@@ -240,7 +238,6 @@ export function AdminPanel() {
         </span>
       </header>
       <section className="admin-content">
-        <details className="community-admin-section"><summary>Comunidade: aprovar alunos, moderar stories e criar desafios</summary><CommunityAdmin /></details>
         <p className="eyebrow">SUMMER FIT / ADMINISTRAÇÃO</p>
         <div className="section-heading admin-heading">
           <div>

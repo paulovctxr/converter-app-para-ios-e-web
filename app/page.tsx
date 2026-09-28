@@ -12,7 +12,6 @@ const ProWorkspace = dynamic(() => import("@/components/pro-workspace").then((mo
 const ProPaywall = dynamic(() => import("@/components/pro-paywall").then((module) => module.ProPaywall));
 const ProProgressInsights = dynamic(() => import("@/components/pro-progress-insights").then((module) => module.ProProgressInsights), { loading: PanelLoading });
 const WorkoutImporter = dynamic(() => import("@/components/workout-importer").then((module) => module.WorkoutImporter), { loading: PanelLoading });
-const CommunityPanel = dynamic(() => import("@/components/community-panel").then((module) => module.CommunityPanel), { loading: PanelLoading });
 import {
   effectiveExpiresAt,
   effectiveStatus,
@@ -54,7 +53,6 @@ import {
   TrendingUp,
   Utensils,
   UserRound,
-  Users,
   X,
 } from "lucide-react";
 
@@ -63,7 +61,6 @@ const navItems = [
   { label: "Treinos", icon: Dumbbell },
   { label: "Nutrição", icon: Utensils },
   { label: "Progresso", icon: TrendingUp },
-  { label: "Comunidade", icon: Users },
   { label: "Perfil", icon: UserRound },
 ] as const;
 const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -1375,7 +1372,6 @@ function Dashboard({ user }: { user: User }) {
             <PlanPanel access={access} onRefresh={refreshAccess} onOpenNutrition={() => setActiveTab("Nutrição")} />
           )}
           {activeTab === "Nutrição" && <NutritionistCard />}
-          {activeTab === "Comunidade" && <CommunityPanel userId={user.id} name={displayName} />}
           {paid && (nutritionVisited || activeTab === "Nutrição") && <div hidden={activeTab !== "Nutrição"}>
             <ProWorkspace onRefresh={refreshAccess} active={activeTab === "Nutrição"} />
           </div>}
@@ -1495,7 +1491,7 @@ function Dashboard({ user }: { user: User }) {
             </section>
           )}
           <footer className="page-footer">
-            SUMMER FIT <span>A academia que vai esquentar o seu dia.</span><small>Interface 28.09 · Comunidade</small>
+            SUMMER FIT <span>A academia que vai esquentar o seu dia.</span><small>Interface 28.09 · Comunidade desativada</small>
           </footer>
         </div>
         <nav className="mobile-nav" aria-label="Navegação mobile">
