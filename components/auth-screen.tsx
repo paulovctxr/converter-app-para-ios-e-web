@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 import { ArrowRight, Dumbbell, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { InstallApp } from '@/components/install-app'
 
 type Mode = 'login' | 'signup' | 'reset'
 export function AuthScreen({ initialMessage = '' }: { initialMessage?: string }) {
@@ -40,6 +41,7 @@ export function AuthScreen({ initialMessage = '' }: { initialMessage?: string })
     finally { setLoading(false) }
   }
   return <main className="auth-shell auth-shell-branded">
+    <InstallApp />
     <section className="auth-brand-panel" aria-label="Summer Fit">
       <img className="auth-brand-logo" src="/summer-fit-brand.jpeg" alt="Summer Fit — A academia que vai esquentar o seu dia" />
       <div className="auth-brand-copy">

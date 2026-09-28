@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import type { User } from "@supabase/supabase-js";
 import { PanelLoading } from "@/components/panel-loading";
 import { NutritionistCard } from "@/components/nutritionist-card";
-import { InstallApp } from "@/components/install-app";
 import { RestTimer, WorkoutClock } from "@/components/workout-clock";
 import { TAB_PATHS, tabFromHash, type AppTab } from "@/lib/navigation";
 const PlanPanel = dynamic(() => import("@/components/plan-panel").then((module) => module.PlanPanel), { loading: PanelLoading });
@@ -1495,7 +1494,6 @@ function Dashboard({ user }: { user: User }) {
               </button>
             </section>
           )}
-          <div hidden={activeTab !== "Início" && activeTab !== "Perfil"}><InstallApp /></div>
           <footer className="page-footer">
             SUMMER FIT <span>A academia que vai esquentar o seu dia.</span><small>Interface 28.09 · Comunidade</small>
           </footer>
