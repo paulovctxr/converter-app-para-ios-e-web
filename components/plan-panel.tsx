@@ -6,11 +6,8 @@ import {
   Check,
   Copy,
   Crown,
-  Droplets,
   MessageCircle,
-  RefreshCw,
   ShieldCheck,
-  Sparkles,
   Utensils,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -39,11 +36,9 @@ function date(value: string | null | undefined) {
 
 export function PlanPanel({
   access,
-  onRefresh,
   onOpenNutrition,
 }: {
   access: Access | null;
-  onRefresh: () => void;
   onOpenNutrition: () => void;
 }) {
   const [config, setConfig] = useState<PlanConfig>(DEFAULT_PLAN_CONFIG);
@@ -136,32 +131,6 @@ export function PlanPanel({
 
   return (
     <section className="tab-panel pro-page">
-      <header className="pro-page-hero">
-        <div className="pro-hero-icon">
-          <Crown size={30} />
-        </div>
-        <div>
-          <p className="eyebrow">SUMMER PRO</p>
-          <h2 className="panel-title">Evolua dentro e fora do treino.</h2>
-          <p>
-            Seu treino da academia continua gratuito. O PRO adiciona nutrição,
-            análises e uma visão mais completa da sua evolução.
-          </p>
-        </div>
-        <button
-          className="secondary-button"
-          disabled={busy}
-          onClick={() => {
-            setMessage("");
-            onRefresh();
-            void loadPlanData();
-          }}
-        >
-          <RefreshCw size={16} />
-          Atualizar
-        </button>
-      </header>
-
       {paid && <div className="subscription-tools-link"><div><strong>Seu espaço PRO está liberado</strong><p>Acesse seu cardápio, água, diário e biblioteca na aba Nutrição.</p></div><button className="primary-button" onClick={onOpenNutrition}><Utensils size={17} />Abrir meus recursos</button></div>}
 
       {paid && (
@@ -341,36 +310,6 @@ export function PlanPanel({
       <div role="status" aria-live="polite">
         {message && <p className="notice">{message}</p>}
       </div>
-
-      {!paid && (
-        <section className="pro-preview-card">
-          <div className="pro-preview-icon">
-            <Sparkles size={26} />
-          </div>
-          <div>
-            <p className="eyebrow">EXCLUSIVO SUMMER PRO</p>
-            <h3>Nutrição com Inteligência Artificial</h3>
-            <p>
-              Cardápio de 7 dias, metas de calorias e macros, controle de água
-              e lista de compras em uma experiência integrada.
-            </p>
-            <div className="preview-pills">
-              <span>
-                <Utensils size={15} /> Cardápio personalizado
-              </span>
-              <span>
-                <Droplets size={15} /> Controle de água
-              </span>
-            </div>
-          </div>
-          <button
-            className="primary-button"
-            onClick={() => setCheckoutOpen(true)}
-          >
-            CONHECER SUMMER PRO
-          </button>
-        </section>
-      )}
     </section>
   );
 }

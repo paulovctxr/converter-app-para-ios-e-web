@@ -1369,7 +1369,7 @@ function Dashboard({ user }: { user: User }) {
             </section>
           )}
           {activeTab === "Plano" && (
-            <PlanPanel access={access} onRefresh={refreshAccess} onOpenNutrition={() => setActiveTab("Nutrição")} />
+            <PlanPanel access={access} onOpenNutrition={() => setActiveTab("Nutrição")} />
           )}
           {activeTab === "Nutrição" && <NutritionistCard />}
           {paid && (nutritionVisited || activeTab === "Nutrição") && <div hidden={activeTab !== "Nutrição"}>
