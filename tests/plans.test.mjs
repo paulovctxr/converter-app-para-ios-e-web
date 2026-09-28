@@ -36,11 +36,11 @@ test('plan helpers keep free and PRO access explicit', () => {
 })
 
 test('central pricing supports a future promotion without changing screens', () => {
-  assert.equal(monthlyPrice(DEFAULT_PLAN_CONFIG), 1490)
+  assert.equal(monthlyPrice(DEFAULT_PLAN_CONFIG), 1000)
   assert.equal(monthlyPrice({
     ...DEFAULT_PLAN_CONFIG,
     promotion_active: true,
-  }), 990)
+  }), 1000)
   assert.equal(
     DEFAULT_PLAN_CONFIG.pro_monthly_price_cents * 12 -
       DEFAULT_PLAN_CONFIG.pro_annual_price_cents,

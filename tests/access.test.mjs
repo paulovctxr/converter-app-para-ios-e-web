@@ -64,7 +64,7 @@ test('real Postgres permissions, subscriptions, PIX review and data isolation', 
     assert.equal(pricing.pro_annual_price_cents, 11990)
     assert.equal(pricing.annual_savings_cents, 5890)
     const request = await scalar("select public.summer_request_subscription('monthly')")
-    assert.equal(request.amount_cents, 1490)
+    assert.equal(request.amount_cents, 1000)
     assert.equal(request.status, 'pending')
     assert.equal((await db.query('select * from public.summer_subscription_requests')).rows.length, 1)
     await assert.rejects(() => db.query(`select public.summer_admin_review_subscription_request(${request.request_id}, 'approved')`), /restrito/)

@@ -12,7 +12,7 @@ Aplicativo Next.js com autenticação Supabase, fichas pessoais persistentes, re
 - Interface responsiva e manifesto para adicionar à tela inicial do celular. Internet é necessária; não há promessa de uso offline.
 - `/admin`: painel exclusivo do proprietário, alunos paginados, pesquisa por nome/e-mail/matrícula disponível, filtros por situação e alertas de vencimento em sete dias.
 - Summer Grátis (R$ 0): cadastro, treinos manuais, digitalização da ficha por foto, cargas, cronômetro e histórico básico.
-- Summer PRO: R$ 14,90/mês ou R$ 119,90/ano, com economia de R$ 58,90 no anual. O preço fica centralizado em `summer_private.plan_config` e a promoção futura de R$ 9,90/mês pode ser ativada sem alterar as telas.
+- Summer PRO: promoção de lançamento de R$ 10,00 no primeiro mês; depois R$ 14,90/mês ou R$ 119,90/ano, com economia de R$ 58,90 no anual. Os preços ficam centralizados em `summer_private.plan_config`.
 - O pagamento continua sendo manual via PIX. A pessoa solicita a assinatura, envia o comprovante e somente o administrador aprova no painel. O Summer PRO usa os status `free`, `pro`, `expired` e `cancelled`, com periodicidade mensal ou anual.
 - A digitalização por foto permanece disponível no Summer Grátis. Para proteger o custo da IA, a cota mensal é configurável no painel e vale para todas as contas; repetir uma análise que falhou não é contado como conclusão.
 - Espaço Summer PRO funcional: perfil nutricional, metas de calorias e macros, controle de água, cardápio personalizado de sete dias por IA e lista de compras automática.

@@ -239,7 +239,9 @@ export function PlanPanel({
             </p>
           )}
           {config.promotion_active && selectedPlan === "monthly" && (
-            <p className="annual-saving">Oferta promocional ativa</p>
+            <p className="annual-saving">
+              Promoção de lançamento · 1º mês por {formatBRL(config.promotional_monthly_price_cents)}
+            </p>
           )}
           <ul className="feature-list pro-features">
             {PRO_FEATURES.map((feature) => (
