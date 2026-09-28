@@ -1,0 +1,26 @@
+.panel { color: #171717; margin-bottom: 28px; }
+.hero { background: #171717; color: white; border-radius: 20px; padding: 26px; border-top: 5px solid #ffd600; margin-bottom: 20px; }
+.hero h2 { font-size: clamp(26px, 5vw, 36px); margin: 8px 0; }
+.hero p { line-height: 1.6; max-width: 650px; color: #f1f1ed; }
+.eyebrow { font-size: 12px; letter-spacing: 1.2px; font-weight: 700; color: #ffd600 !important; }
+.tabs, .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.panel button { min-height: 44px; padding: 10px 16px; border: 1px solid #ccc; background: white; color: #171717; border-radius: 10px; font-weight: 650; cursor: pointer; }
+.panel button[aria-pressed=true], .panel .primary { background: #bc101b; color: #fff; border-color: #bc101b; }
+.panel button:disabled { opacity: .55; cursor: not-allowed; }
+.panel button:focus-visible, .panel input:focus-visible, .panel textarea:focus-visible { outline: 3px solid #a96500; outline-offset: 3px; }
+.card { border: 1px solid #e1dfd8; border-radius: 16px; background: white; padding: 20px; margin-bottom: 16px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 10px; font-size: 21px; }
+.card p { line-height: 1.6; }
+.form { display: grid; gap: 14px; }
+.form label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
+.form input, .form textarea, .form select { width: 100%; min-width: 0; padding: 12px; border: 1px solid #aaa; border-radius: 8px; font-size: 16px; background: #fff; color: #171717; }
+.form .consent { display: flex; align-items: flex-start; line-height: 1.5; font-weight: 400; }
+.consent input { width: 20px; min-width: 20px; height: 20px; margin-top: 2px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr)); gap: 16px; }
+.photo { display: block; width: 100%; max-height: 460px; object-fit: contain; border-radius: 10px; background: #151515; margin: 12px 0; }
+.meta { font-size: 13px; color: #5d5d5d; }
+.notice { padding: 14px; background: #fff4bf; color: #443900; border-radius: 10px; line-height: 1.5; }
+.row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-top: 1px solid #eee; padding: 14px 0; }
+.panel progress { width: 100%; height: 14px; accent-color: #bc101b; }
+.dates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+@media(max-width:600px) { .hero { padding: 21px; } .card { padding: 16px; } .dates { grid-template-columns: 1fr; } .tabs button { flex: 1; } }

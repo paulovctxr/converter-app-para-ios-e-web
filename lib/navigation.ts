@@ -3,6 +3,7 @@ export const TAB_PATHS = {
   Treinos: "treinos",
   Nutrição: "nutricao",
   Progresso: "progresso",
+  Comunidade: "comunidade",
   Perfil: "perfil",
   Plano: "planos",
 } as const;

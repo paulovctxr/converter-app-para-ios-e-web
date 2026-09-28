@@ -1,0 +1,3 @@
+[functions.community-cleanup]
+# Authorization is checked inside the function using COMMUNITY_CLEANUP_SECRET.
+verify_jwt = false

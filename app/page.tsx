@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { User } from "@supabase/supabase-js";
 import { PanelLoading } from "@/components/panel-loading";
+import { NutritionistCard } from "@/components/nutritionist-card";
+import { InstallApp } from "@/components/install-app";
 import { RestTimer, WorkoutClock } from "@/components/workout-clock";
 import { TAB_PATHS, tabFromHash, type AppTab } from "@/lib/navigation";
 const PlanPanel = dynamic(() => import("@/components/plan-panel").then((module) => module.PlanPanel), { loading: PanelLoading });
@@ -11,6 +13,7 @@ const ProWorkspace = dynamic(() => import("@/components/pro-workspace").then((mo
 const ProPaywall = dynamic(() => import("@/components/pro-paywall").then((module) => module.ProPaywall));
 const ProProgressInsights = dynamic(() => import("@/components/pro-progress-insights").then((module) => module.ProProgressInsights), { loading: PanelLoading });
 const WorkoutImporter = dynamic(() => import("@/components/workout-importer").then((module) => module.WorkoutImporter), { loading: PanelLoading });
+const CommunityPanel = dynamic(() => import("@/components/community-panel").then((module) => module.CommunityPanel), { loading: PanelLoading });
 import {
   effectiveExpiresAt,
   effectiveStatus,
@@ -52,6 +55,7 @@ import {
   TrendingUp,
   Utensils,
   UserRound,
+  Users,
   X,
 } from "lucide-react";
 
@@ -60,6 +64,7 @@ const navItems = [
   { label: "Treinos", icon: Dumbbell },
   { label: "Nutrição", icon: Utensils },
   { label: "Progresso", icon: TrendingUp },
+  { label: "Comunidade", icon: Users },
   { label: "Perfil", icon: UserRound },
 ] as const;
 const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -872,7 +877,7 @@ function Dashboard({ user }: { user: User }) {
               </div>
               <div className="home-shortcuts" aria-label="Acesso rápido">
                 <button onClick={openAddWorkout}><span className="shortcut-icon"><Camera size={22} /></span><span><strong>Importar minha ficha</strong><small>Do papel para o celular</small></span><ChevronRight size={18} /></button>
-                <button onClick={() => setActiveTab("Nutrição")}><span className="shortcut-icon"><Utensils size={22} /></span><span><strong>Minha nutrição</strong><small>{paid ? "Cardápio, macros e água" : "Conheça os recursos PRO"}</small></span><ChevronRight size={18} /></button>
+                <button onClick={() => setActiveTab("Nutrição")}><span className="shortcut-icon"><Utensils size={22} /></span><span><strong>Minha nutrição</strong><small>{paid ? "Cardápio e acompanhamento profissional" : "Conheça a nutricionista e os recursos PRO"}</small></span><ChevronRight size={18} /></button>
               </div>
               {paid ? (
                 <section className="nutrition-home-card pro-active-home">
@@ -1370,6 +1375,8 @@ function Dashboard({ user }: { user: User }) {
           {activeTab === "Plano" && (
             <PlanPanel access={access} onRefresh={refreshAccess} onOpenNutrition={() => setActiveTab("Nutrição")} />
           )}
+          {activeTab === "Nutrição" && <NutritionistCard />}
+          {activeTab === "Comunidade" && <CommunityPanel userId={user.id} name={displayName} />}
           {paid && (nutritionVisited || activeTab === "Nutrição") && <div hidden={activeTab !== "Nutrição"}>
             <ProWorkspace onRefresh={refreshAccess} active={activeTab === "Nutrição"} />
           </div>}
@@ -1488,8 +1495,9 @@ function Dashboard({ user }: { user: User }) {
               </button>
             </section>
           )}
+          <div hidden={activeTab !== "Início" && activeTab !== "Perfil"}><InstallApp /></div>
           <footer className="page-footer">
-            SUMMER FIT <span>A academia que vai esquentar o seu dia.</span><small>Interface 27.09 · revisão 2</small>
+            SUMMER FIT <span>A academia que vai esquentar o seu dia.</span><small>Interface 28.09 · Comunidade</small>
           </footer>
         </div>
         <nav className="mobile-nav" aria-label="Navegação mobile">

@@ -10,7 +10,12 @@ const unconfirmed = '00000000-0000-0000-0000-000000000004'
 
 test('real Postgres permissions, subscriptions, PIX review and data isolation', async t => {
   const db = new PGlite()
-  await db.exec(`create role anon; create role authenticated; create schema auth;
+  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
+    create schema storage;
+    create function storage.allow_any_operation(text[]) returns boolean language sql stable as $$ select true $$;
+    create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+    create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text,unique(bucket_id,name));
+    alter table storage.objects enable row level security;
     create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz, deleted_at timestamptz, raw_user_meta_data jsonb default '{}', created_at timestamptz default now());
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
