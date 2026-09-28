@@ -1371,7 +1371,6 @@ function Dashboard({ user }: { user: User }) {
           {activeTab === "Plano" && (
             <PlanPanel access={access} onOpenNutrition={() => setActiveTab("Nutrição")} />
           )}
-          {activeTab === "Nutrição" && <NutritionistCard />}
           {paid && (nutritionVisited || activeTab === "Nutrição") && <div hidden={activeTab !== "Nutrição"}>
             <ProWorkspace onRefresh={refreshAccess} active={activeTab === "Nutrição"} />
           </div>}
@@ -1383,6 +1382,7 @@ function Dashboard({ user }: { user: User }) {
             <button className="primary-button" onClick={() => setActiveTab("Plano")}><Crown size={18} />Conhecer Summer PRO<ArrowRight size={18} /></button>
             <small>Seus treinos e a importação por foto continuam gratuitos.</small>
           </section>}
+          {activeTab === "Nutrição" && <NutritionistCard />}
           {activeTab === "Perfil" && (
             <section className="tab-panel profile-panel">
               <div className="profile-big-avatar">{initials}</div>
