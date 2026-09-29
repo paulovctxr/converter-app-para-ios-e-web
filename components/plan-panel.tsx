@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   CalendarDays,
@@ -52,8 +52,22 @@ export function PlanPanel({
   const checkoutTitleRef = useRef<HTMLHeadingElement>(null);
   const subscribeButtonRef = useRef<HTMLButtonElement>(null);
   const paid = isProAccess(access);
+  const subscriptionVersion = access ? JSON.stringify([
+    paid, access.subscription_plan, access.subscription_started_at,
+    access.subscription_expires_at, access.expires_at, access.subscription_updated_at,
+  ]) : null;
+  const previousSubscription = useRef<string | null>(null);
 
-  const loadPlanData = useCallback(async () => {
+  useEffect(() => {
+    let cancelled = false;
+    // A confirmed approval or renewal replaces the pending checkout in place.
+    if (paid && previousSubscription.current && previousSubscription.current !== subscriptionVersion) {
+      setCheckoutOpen(false);
+      setRequest(null);
+      setMessage("");
+    }
+    previousSubscription.current = subscriptionVersion;
+    async function loadPlanData() {
     const supabase = createClient();
     try {
       const [planConfig, pending] = await Promise.all([
@@ -66,6 +80,7 @@ export function PlanPanel({
           .limit(1)
           .maybeSingle(),
       ]);
+      if (cancelled) return;
       if (!planConfig.error && planConfig.data)
         setConfig(planConfig.data as PlanConfig);
       if (!pending.error && pending.data) {
@@ -75,15 +90,18 @@ export function PlanPanel({
         setCheckoutOpen(true);
       } else if (!pending.error) {
         setRequest(null);
+        if (paid) {
+          setCheckoutOpen(false);
+          setMessage("");
+        }
       }
     } catch {
       // The local defaults keep the pricing screen usable during brief outages.
     }
-  }, []);
-
-  useEffect(() => {
+    }
     void loadPlanData();
-  }, [loadPlanData]);
+    return () => { cancelled = true; };
+  }, [paid, subscriptionVersion]);
 
   useEffect(() => {
     if (!checkoutOpen) return;

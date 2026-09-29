@@ -1,0 +1,37 @@
+SUMMER FIT — LIBERAÇÃO AUTOMÁTICA DO PRO
+
+COMO ATUALIZAR
+1. Extraia este ZIP.
+2. Copie as pastas app, components, lib e tests para dentro do seu projeto,
+   junto do package.json. Mescle as pastas e substitua os arquivos de mesmo nome.
+   Não apague as pastas existentes.
+3. No GitHub Desktop, faça o commit e clique em Push origin.
+4. Aguarde o Vercel mostrar Ready. Quem já estiver com uma versão antiga aberta
+   deve atualizar a página uma vez para receber este código.
+
+Não há migração SQL nem alteração de chave ou configuração no Supabase.
+
+COMO FUNCIONA
+O app consulta a assinatura no servidor a cada 5 segundos enquanto a página
+estiver visível e com internet. Também consulta ao voltar à aba ou recuperar
+a conexão. O prazo depende da conexão e da resposta do servidor.
+
+Após você aprovar o plano no painel administrativo, os recursos PRO aparecem
+automaticamente para o aluno, sem sair da conta. O aviso de liberação aparece
+e a tela de pagamento pendente dá lugar à assinatura ativa. A página inteira
+não é recarregada, preservando o treino em andamento.
+
+As verificações usam o usuário autenticado. O botão de envio do comprovante
+continua sem poder liberar o PRO: a decisão permanece no servidor.
+
+VERIFICAÇÃO PRÁTICA APÓS PUBLICAR
+Deixe a conta de um aluno gratuito aberta em um celular. Em outro navegador,
+aprove a solicitação pelo painel administrativo. Com a página do aluno visível
+e conectada, aguarde alguns segundos e confira o aviso e o acesso ao PRO.
+
+VALIDAÇÃO LOCAL
+TypeScript e build de produção passaram. Os testes passaram para transição
+Grátis/PRO/expirado, falhas de rede, consultas simultâneas, descarte de respostas
+após saída e regras de aprovação e isolamento no banco de teste.
+
+Este pacote é uma atualização do código, não uma publicação automática.

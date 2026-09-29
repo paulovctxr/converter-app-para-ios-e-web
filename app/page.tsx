@@ -21,6 +21,7 @@ import {
 } from "@/lib/plans";
 import { AuthScreen } from "@/components/auth-screen";
 import { createClient } from "@/lib/supabase/client";
+import { createSubscriptionSync } from "@/lib/subscription-sync";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import {
   emptyFitness,
@@ -198,26 +199,42 @@ function Dashboard({ user }: { user: User }) {
   const [dataLoading, setDataLoading] = useState(true);
   const [access, setAccess] = useState<Access | null>(null);
   const paid = isProAccess(access);
+  const subscriptionSync = useRef<ReturnType<typeof createSubscriptionSync> | null>(null);
   const refreshAccess = useCallback(async () => {
-    try {
-      const { data, error } = await createClient().rpc("summer_get_access");
-      setAccess(error ? null : (data as Access));
-    } catch {
-      setAccess(null);
-    }
+    await subscriptionSync.current?.refresh();
   }, []);
   useEffect(() => {
-    void refreshAccess();
+    const sync = createSubscriptionSync(async (signal) => {
+      const { data, error } = await createClient()
+        .rpc("summer_get_access")
+        .abortSignal(signal);
+      if (error || !data) throw error || new Error("access unavailable");
+      return data as Access;
+    }, (next, previous) => {
+      setAccess(next);
+      if (isProAccess(next)) setShowPaywall(false);
+      if (previous && !isProAccess(previous) && isProAccess(next)) {
+        setNotice("Seu Summer PRO foi liberado! Os recursos já estão disponíveis.");
+      }
+    });
+    subscriptionSync.current = sync;
     const refresh = () => {
-      if (!document.hidden && navigator.onLine) void refreshAccess();
+      if (!document.hidden && navigator.onLine) void sync.refresh();
     };
+    refresh();
     window.addEventListener("focus", refresh);
-    const timer = window.setInterval(refresh, 60000);
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const timer = window.setInterval(refresh, 5000);
     return () => {
+      sync.dispose();
+      subscriptionSync.current = null;
       window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
       window.clearInterval(timer);
     };
-  }, [refreshAccess]);
+  }, [user.id]);
   const summary = useMemo(() => weekSummary(fitness.sessions), [fitness.sessions]);
   const displayName = String(
     user.user_metadata?.name || user.email?.split("@")[0] || "Atleta",
