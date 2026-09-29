@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Apple,
-  BookOpen,
+  Camera,
   CalendarDays,
   ChefHat,
   Droplets,
@@ -13,14 +13,13 @@ import {
   LoaderCircle,
   Plus,
   RefreshCw,
-  Search,
   ShoppingBasket,
   Sparkles,
   Trash2,
   Utensils,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { ExerciseIllustration } from "@/components/exercise-illustration";
+import { FoodPhotoAnalyzer } from "@/components/food-photo-analyzer";
 import { nutritionDraft, parseNutritionDraft, type NutritionDraft } from "@/lib/nutrition-draft";
 import {
   ACTIVITY_LABELS,
@@ -35,7 +34,6 @@ import {
   readMealPlan,
   type ActivityLevel,
   type DietaryPreference,
-  type ExerciseLibraryItem,
   type MealPlan,
   type MealType,
   type NutritionAccess,
@@ -45,7 +43,7 @@ import {
   type WaterEntry,
 } from "@/lib/nutrition";
 
-type Tool = "overview" | "menu" | "diary" | "shopping" | "library";
+type Tool = "overview" | "menu" | "diary" | "shopping" | "food-photo";
 type FoodDraft = {
   label: string;
   meal_type: MealType;
@@ -69,7 +67,7 @@ const tools = [
   { id: "menu", label: "Cardápio", icon: ChefHat },
   { id: "diary", label: "Diário e água", icon: Droplets },
   { id: "shopping", label: "Compras", icon: ShoppingBasket },
-  { id: "library", label: "Exercícios", icon: BookOpen },
+  { id: "food-photo", label: "Foto da comida", icon: Camera },
 ] as const;
 
 function numeric(value: string, min: number, max: number) {
@@ -120,14 +118,8 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
   const [waterEntries, setWaterEntries] = useState<WaterEntry[]>([]);
   const [food, setFood] = useState<FoodDraft>(emptyFood);
   const [waterAmount, setWaterAmount] = useState("250");
-  const [exercises, setExercises] = useState<ExerciseLibraryItem[]>([]);
-  const [exerciseSearch, setExerciseSearch] = useState("");
-  const [muscleGroup, setMuscleGroup] = useState("Todos");
   const [checkedShopping, setCheckedShopping] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [libraryLoading, setLibraryLoading] = useState(false);
-  const libraryState = useRef<"idle" | "loading" | "loaded" | "error">("idle");
-  const [libraryError, setLibraryError] = useState(false);
   const [coreError, setCoreError] = useState(false);
   const [dayLoading, setDayLoading] = useState(false);
   const [dayError, setDayError] = useState(false);
@@ -219,31 +211,6 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
     }
   }, [day]);
 
-  const loadLibrary = useCallback(async (retry = false) => {
-    if (libraryState.current === "loading" || libraryState.current === "loaded" || (libraryState.current === "error" && !retry)) return;
-    libraryState.current = "loading";
-    setLibraryLoading(true);
-    setLibraryError(false);
-    try {
-      const { data, error } = await createClient()
-        .from("summer_exercise_library")
-        .select(
-          "id,slug,name,muscle_group,equipment,difficulty,instructions,tips",
-        )
-        .order("muscle_group")
-        .order("name");
-      if (error) throw error;
-      setExercises((data || []) as ExerciseLibraryItem[]);
-      libraryState.current = "loaded";
-    } catch {
-      libraryState.current = "error";
-      setLibraryError(true);
-      setMessage("Não foi possível carregar a biblioteca de exercícios.");
-    } finally {
-      setLibraryLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     if (active) void loadCore();
   }, [active, loadCore]);
@@ -251,9 +218,6 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
     if (active && activeTool === "diary") void loadDay();
     return () => dayController.current?.abort();
   }, [active, activeTool, loadDay]);
-  useEffect(() => {
-    if (active && activeTool === "library") void loadLibrary();
-  }, [active, activeTool, loadLibrary]);
 
   const targets = useMemo(
     () => plan?.targets || (profile ? calculateNutritionTargets(profile) : calculateNutritionTargets(DEFAULT_NUTRITION_PROFILE)),
@@ -264,24 +228,6 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
     (total, item) => total + Number(item.amount_ml || 0),
     0,
   );
-  const groups = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(exercises.map((item) => item.muscle_group))),
-    ],
-    [exercises],
-  );
-  const visibleExercises = useMemo(() => {
-    const query = exerciseSearch.trim().toLocaleLowerCase("pt-BR");
-    return exercises.filter(
-      (item) =>
-        (muscleGroup === "Todos" || item.muscle_group === muscleGroup) &&
-        (!query ||
-          `${item.name} ${item.muscle_group} ${item.equipment}`
-            .toLocaleLowerCase("pt-BR")
-            .includes(query)),
-    );
-  }, [exerciseSearch, exercises, muscleGroup]);
 
   async function saveProfile(generate: boolean) {
     if (operation.current) return;
@@ -382,6 +328,37 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
     } catch {
       setMessage("Não foi possível registrar esta refeição.");
       onRefresh();
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function replaceMeal(mealId: string) {
+    if (busy || !plan) return;
+    setBusy(`replace-${mealId}`);
+    setMessage("");
+    try {
+      const { data, error } = await createClient().functions.invoke<{
+        plan?: unknown;
+        error?: string;
+      }>("nutrition-ai-tools", {
+        body: {
+          action: "replace_meal",
+          planId: plan.id,
+          dayIndex: selectedPlanDay,
+          mealId,
+        },
+      });
+      if (error || !data?.plan) {
+        const payload = await edgeError(error);
+        throw new Error(payload || data?.error || "Não foi possível substituir esta refeição.");
+      }
+      const updated = readMealPlan(data.plan);
+      if (!updated) throw new Error("O cardápio atualizado não foi reconhecido.");
+      setPlan(updated);
+      setMessage("Refeição substituída pela IA e lista de compras atualizada.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível substituir esta refeição.");
     } finally {
       setBusy("");
     }
@@ -856,6 +833,19 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
                                 ))}
                               </ul>
                             </details>
+                            <button
+                              className="meal-replace-button"
+                              type="button"
+                              disabled={Boolean(busy)}
+                              onClick={() => void replaceMeal(meal.id)}
+                            >
+                              {busy === `replace-${meal.id}` ? (
+                                <LoaderCircle className="spin" size={15} />
+                              ) : (
+                                <Sparkles size={15} />
+                              )}
+                              SUBSTITUIR COM IA
+                            </button>
                           </article>
                         ))}
                       </div>
@@ -1175,83 +1165,8 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
             </div>
           )}
 
-          {activeTool === "library" && (
-            <div className="exercise-library-panel">
-              <div className="meal-plan-header">
-                <div>
-                  <p className="eyebrow">BIBLIOTECA DE EXECUÇÃO</p>
-                  <h4>Aprenda os principais exercícios</h4>
-                  <p>Passos e cuidados práticos para sua rotina.</p>
-                </div>
-              </div>
-              <div className="library-filters">
-                <label>
-                  <Search size={17} />
-                  <input
-                    type="search"
-                    placeholder="Buscar exercício"
-                    value={exerciseSearch}
-                    onChange={(event) => setExerciseSearch(event.target.value)}
-                  />
-                </label>
-                <select
-                  aria-label="Filtrar por grupo muscular"
-                  value={muscleGroup}
-                  onChange={(event) => setMuscleGroup(event.target.value)}
-                >
-                  {groups.map((group) => (
-                    <option key={group}>{group}</option>
-                  ))}
-                </select>
-              </div>
-              {libraryLoading ? (
-                <div className="pro-loading">
-                  <LoaderCircle className="spin" size={22} /> Carregando biblioteca...
-                </div>
-              ) : (
-                <div className="exercise-library-grid">
-                  {visibleExercises.map((exercise) => (
-                    <details key={exercise.id} className="library-exercise-card">
-                      <summary>
-                        <span className="library-exercise-icon">
-                          <Dumbbell size={19} />
-                        </span>
-                        <span>
-                          <strong>{exercise.name}</strong>
-                          <small>
-                            {exercise.muscle_group} · {exercise.equipment}
-                          </small>
-                        </span>
-                        <em>{exercise.difficulty}</em>
-                      </summary>
-                      <div>
-                        <ExerciseIllustration slug={exercise.slug} name={exercise.name} />
-                        <h6>Como executar</h6>
-                        <ol>
-                          {exercise.instructions.map((instruction) => (
-                            <li key={instruction}>{instruction}</li>
-                          ))}
-                        </ol>
-                        {exercise.tips.length > 0 && (
-                          <>
-                            <h6>Cuidados</h6>
-                            <ul>
-                              {exercise.tips.map((tip) => (
-                                <li key={tip}>{tip}</li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                      </div>
-                    </details>
-                  ))}
-                </div>
-              )}
-              {libraryError && <button className="secondary-button" onClick={() => void loadLibrary(true)}>Tentar carregar biblioteca</button>}
-              {!libraryLoading && !libraryError && !visibleExercises.length && (
-                <p>Nenhum exercício encontrado com esse filtro.</p>
-              )}
-            </div>
+          {activeTool === "food-photo" && (
+            <FoodPhotoAnalyzer day={day} onSaved={loadDay} />
           )}
         </>
       )}

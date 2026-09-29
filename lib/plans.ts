@@ -62,11 +62,12 @@ export const PRO_FEATURES = [
   "Tudo do plano gratuito",
   "Nutrição com IA",
   "Cardápio personalizado de 7 dias",
+  "Registro da alimentação por foto",
+  "Substituição de alimentos com IA",
   "Calorias, macros e controle de água",
   "Evolução completa e gráficos",
   "Recordes pessoais",
   "Lista de compras automática",
-  "Biblioteca completa de exercícios",
   "Recursos premium futuros",
 ] as const;
 

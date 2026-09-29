@@ -155,6 +155,7 @@ input, textarea, select { font-size: 16px !important; }
 /* Workout photo import */
 body:has(.import-overlay) { overflow: hidden; }
 .visually-hidden-file { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .import-overlay { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(23, 19, 10, .62); backdrop-filter: blur(5px); }
 .import-dialog { width: min(940px, 100%); max-height: calc(100dvh - 48px); overflow: auto; border: 1px solid var(--line); border-radius: 24px; background: var(--cream); box-shadow: 0 28px 90px rgba(23, 19, 10, .28); }
 .import-header { position: sticky; z-index: 3; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 26px; border-bottom: 1px solid var(--line); background: rgba(255, 253, 247, .96); backdrop-filter: blur(10px); }
@@ -471,6 +472,31 @@ body:has(.paywall-overlay) { overflow: hidden; }
 .meal-card details { margin-top: 11px; border-top: 1px solid var(--line); padding-top: 10px; }
 .meal-card summary { color: #745c00; cursor: pointer; font-size: 10px; font-weight: 900; }
 .meal-card ul { margin: 9px 0 0; padding-left: 17px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.meal-replace-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 38px; margin-top: 13px; padding: 8px 10px; border: 1px solid #e6c52e; border-radius: 10px; color: #5e4b00; background: #fff8d7; font: inherit; font-size: 10px; font-weight: 900; cursor: pointer; }
+.meal-replace-button:hover:not(:disabled) { background: #fff0a9; }
+.meal-replace-button:disabled { cursor: wait; opacity: .65; }
+.food-photo-card { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: white; }
+.food-photo-card > .section-heading { align-items: flex-start; margin: 0 0 15px; }
+.food-photo-card > .section-heading h4 { margin: 0 0 4px; font-size: 18px; }
+.food-photo-card > .section-heading p { margin: 0; color: var(--muted); font-size: 11px; }
+.food-photo-card > .section-heading > svg { color: #886d00; }
+.food-photo-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+.food-photo-actions > button { flex: 1 1 220px; justify-content: center; }
+.food-photo-preview { max-width: 520px; margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; background: #fffdf7; overflow: hidden; }
+.food-photo-preview img { display: block; width: 100%; max-height: 360px; object-fit: cover; }
+.food-photo-loading { display: grid; justify-items: center; gap: 7px; padding: 35px 18px; border-radius: 13px; color: #695400; background: #fff8d7; text-align: center; }
+.food-photo-loading span { color: var(--muted); font-size: 11px; }
+.food-photo-review { margin-top: 14px; padding: 15px; border: 1px solid #e7d47a; border-radius: 14px; background: #fffdf3; }
+.food-photo-review-heading { display: flex; align-items: flex-start; gap: 9px; color: #5e4b00; }
+.food-photo-review-heading > svg { flex: 0 0 auto; margin-top: 2px; }
+.food-photo-review-heading div { display: grid; gap: 3px; }
+.food-photo-review-heading span { color: var(--muted); font-size: 11px; }
+.food-photo-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.food-photo-fields label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 800; }
+.food-photo-fields .wide-field { grid-column: span 2; }
+.food-photo-fields input, .food-photo-fields select { width: 100%; min-height: 41px; padding: 8px 10px; border: 1px solid #e1d6b6; border-radius: 9px; color: var(--ink); background: #fffdf7; font: inherit; font-size: 13px; }
+.food-photo-warning { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; color: #8b5200; font-size: 11px; }
+.food-photo-note { margin: 11px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .compact-empty { margin: 0; min-height: 270px; }
 
 .diary-heading label { width: 170px; }
@@ -589,6 +615,8 @@ body:has(.paywall-overlay) { overflow: hidden; }
   .ai-usage-badge, .pro-action-card .primary-button, .meal-plan-header .secondary-button { width: 100%; justify-content: center; }
   .nutrition-form-grid, .food-log-grid, .meal-grid, .shopping-groups, .exercise-library-grid { grid-template-columns: 1fr; }
   .nutrition-form-grid .wide-field, .food-log-grid .wide-field { grid-column: auto; }
+  .food-photo-fields { grid-template-columns: 1fr 1fr; }
+  .food-photo-fields .wide-field { grid-column: 1 / -1; }
   .nutrition-form-actions { flex-direction: column-reverse; }
   .nutrition-form-actions button { width: 100%; }
   .plan-day-tabs { display: flex; overflow-x: auto; }

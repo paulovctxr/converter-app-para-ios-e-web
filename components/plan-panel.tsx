@@ -166,7 +166,7 @@ export function PlanPanel({
     <section className="tab-panel pro-page">
       {!checkoutOpen && (
         <>
-          {paid && <div className="subscription-tools-link"><div><strong>Seu espaço PRO está liberado</strong><p>Acesse seu cardápio, água, diário e biblioteca na aba Nutrição.</p></div><button className="primary-button" onClick={onOpenNutrition}><Utensils size={17} />Abrir meus recursos</button></div>}
+          {paid && <div className="subscription-tools-link"><div><strong>Seu espaço PRO está liberado</strong><p>Acesse cardápio com IA, diário, água, registro por foto e substituições inteligentes na aba Nutrição.</p></div><button className="primary-button" onClick={onOpenNutrition}><Utensils size={17} />Abrir meus recursos</button></div>}
 
           {paid && (
             <div className="subscription-section-heading">

@@ -3,10 +3,12 @@ import { useModalDialog } from "@/lib/use-modal-dialog";
 
 import {
   BarChart3,
+  Camera,
   Crown,
   Droplets,
   Flame,
   ShoppingBasket,
+  Sparkles,
   Trophy,
   Utensils,
   X,
@@ -20,6 +22,8 @@ import {
 
 const highlights = [
   { icon: Utensils, label: "Nutrição com IA" },
+  { icon: Camera, label: "Registrar alimentação por foto" },
+  { icon: Sparkles, label: "Substituir alimentos com IA" },
   { icon: Flame, label: "Calorias e macronutrientes" },
   { icon: Droplets, label: "Controle de água" },
   { icon: BarChart3, label: "Gráficos de evolução" },
