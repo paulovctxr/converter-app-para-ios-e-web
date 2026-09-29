@@ -1478,7 +1478,7 @@ function Dashboard({ user }: { user: User }) {
             <button className="primary-button" onClick={() => setActiveTab("Plano")}><Crown size={18} />Conhecer Summer PRO<ArrowRight size={18} /></button>
             <small>Seus treinos e a importação por foto continuam gratuitos.</small>
           </section>}
-          {activeTab === "Nutrição" && <NutritionistCard />}
+          {!paid && activeTab === "Nutrição" && <NutritionistCard />}
           {activeTab === "Perfil" && (
             <section className="tab-panel profile-panel">
               <div className="profile-big-avatar">{initials}</div>

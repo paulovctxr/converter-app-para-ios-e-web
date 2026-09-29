@@ -1,58 +1,24 @@
-SUMMER FIT — ACESSO EXCLUSIVO PARA ALUNOS
+SUMMER TREINOS — NUTRIÇÃO PRO SEM CARD DA ELISABETE
 
-O SUPABASE JÁ FOI ATUALIZADO
-As regras de matrícula e segurança já estão ativas no projeto atual.
-Não copie o caminho do arquivo SQL para o SQL Editor e não execute a migração
-manualmente. Os arquivos de migração estão no pacote apenas para manter o
-seu projeto local igual ao banco.
+O que foi alterado:
+- Usuários Summer PRO veem somente a Nutrição com IA na aba Nutrição.
+- O card da nutricionista Elisabete não aparece para usuários PRO.
+- O card continua disponível para usuários gratuitos, junto da apresentação do plano PRO.
+- Nenhuma configuração do Supabase ou SQL precisa ser alterada.
 
-COMO PUBLICAR O SITE
-1. Extraia este ZIP.
-2. Copie as pastas app, components, lib, supabase e tests para dentro da pasta
-   do seu projeto, ao lado do package.json.
-3. Escolha mesclar as pastas e substituir os arquivos de mesmo nome. Não
-   apague as pastas completas, pois o projeto possui outros arquivos nelas.
-4. Abra o GitHub Desktop, confira os arquivos alterados, escreva uma mensagem
-   como "Controle de matrícula dos alunos" e clique em Commit.
-5. Clique em Push origin.
-6. Aguarde o Vercel mostrar Ready.
+COMO PUBLICAR
 
-O QUE MUDA
-- O cadastro passa a exigir uma matrícula com exatamente 4 números.
-- Todo novo aluno começa como "Aguardando aprovação".
-- Somente o administrador pode aprovar, suspender, reativar ou marcar como
-  inativo.
-- Um aluno suspenso ou inativo perde acesso ao app e aos dados no banco.
-- Os treinos, o histórico e a nutrição ficam guardados durante o bloqueio.
-- A tela do aluno atualiza automaticamente poucos segundos após uma ação sua.
-- O Summer PRO continua separado da situação da academia. O aluno precisa
-  estar ativo na academia para usar o Grátis ou o PRO.
+1. Extraia este arquivo ZIP.
+2. Copie a pasta "app" para a pasta principal do seu projeto.
+3. Quando o computador perguntar, confirme a substituição do arquivo app/page.tsx.
+4. Abra o GitHub Desktop.
+5. Escreva no resumo do commit:
+   Ocultar Elisabete na Nutrição PRO
+6. Clique em "Commit to main".
+7. Clique em "Push origin".
+8. Aguarde o projeto ficar "Ready" na Vercel.
+9. Entre com uma conta PRO e abra Nutrição para conferir.
 
-CONTAS QUE JÁ EXISTIAM
-As 26 contas confirmadas que já estavam no Supabase foram mantidas como ativas
-para não bloquear alunos atuais de surpresa. Revise a lista no painel e use
-"Suspender" ou "Aluno saiu" nas contas que não devem continuar.
-
-COMO GERENCIAR
-Entre na sua conta de administrador e abra:
-https://summertreinos.vercel.app/admin
-
-No painel:
-- Aguardando aprovação: confira nome e matrícula e clique em APROVAR ALUNO.
-- Aluno ativo: pode usar o aplicativo normalmente.
-- Suspenso: bloqueio temporário; os dados permanecem salvos.
-- Inativo: use quando a pessoa não frequenta mais a academia.
-- Reativar acesso: devolve o acesso com todos os dados anteriores.
-
-TESTE DEPOIS DA PUBLICAÇÃO
-1. Crie uma conta de teste com uma matrícula de 4 números que ainda não existe.
-2. Confirme o e-mail e entre. Deve aparecer "Cadastro aguardando aprovação".
-3. Em outra tela, entre no painel administrativo e aprove o aluno.
-4. A conta de teste deve abrir o aplicativo automaticamente em poucos segundos.
-5. Suspenda a conta e confira que a tela é bloqueada sem perder os treinos.
-
-VALIDAÇÃO REALIZADA
-- Build de produção e TypeScript aprovados.
-- 33 testes aprovados.
-- Testes reais de políticas Postgres/RLS para cadastro pendente, aprovação,
-  suspensão, reativação, preservação dos treinos, PRO, nutrição e importação.
+Teste realizado:
+- TypeScript: aprovado.
+- Build de produção: aprovado.
