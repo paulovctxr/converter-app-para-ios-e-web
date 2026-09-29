@@ -364,6 +364,34 @@ body:has(.paywall-overlay) { overflow: hidden; }
 .pending-request-card > div { display: flex; gap: 6px; margin-top: 4px; }
 .status-badge.free { background: #f4f0e6; color: #665b48; }
 .status-badge.cancelled { background: #f0e7f7; color: #6c428b; }
+
+/* Academy membership approval */
+.field-help { color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.45; }
+.membership-shell { background: radial-gradient(circle at 50% 0%, rgba(255, 216, 0, .24), transparent 42%), var(--cream); }
+.membership-gate { text-align: center; }
+.membership-logo { width: min(100%, 300px); height: auto; margin: 0 auto 24px; object-fit: contain; }
+.membership-gate-icon { width: 58px; height: 58px; display: grid; place-items: center; margin: 0 auto 16px; border-radius: 18px; color: #7a5900; background: #fff1a6; }
+.membership-gate h1 { margin: 8px 0 12px; font-size: clamp(27px, 7vw, 36px); letter-spacing: -.04em; }
+.membership-gate > p:not(.eyebrow) { color: var(--muted); line-height: 1.6; }
+.membership-number { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin: 22px 0 10px; padding: 15px 17px; border: 1px solid #ead889; border-radius: 14px; background: #fff9dc; text-align: left; }
+.membership-number span { color: var(--muted); font-size: 12px; }
+.membership-number strong { font-size: 23px; letter-spacing: .12em; }
+.membership-auto-note { font-size: 12px; }
+.membership-gate-actions { display: grid; gap: 10px; margin-top: 24px; }
+.membership-gate-actions button { width: 100%; justify-content: center; }
+.membership-badge { display: inline-block; padding: 7px 9px; border-radius: 8px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.membership-badge.active { color: #315d1c; background: #e2f3d8; }
+.membership-badge.pending { color: #765800; background: #fff0ae; }
+.membership-badge.suspended { color: #923119; background: #ffe1d9; }
+.membership-badge.inactive { color: #595959; background: #e9e9e9; }
+.admin-registration-field { width: 100%; display: grid; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 700; }
+.admin-registration-field input { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; letter-spacing: .12em; }
+.membership-approve-button, .membership-suspend-button { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 9px; font: inherit; font-size: 10px; font-weight: 900; cursor: pointer; }
+.membership-approve-button { color: #173900; background: #bce86e; }
+.membership-suspend-button { color: #7b300d; background: #ffe0bd; }
+.membership-approve-button:disabled, .membership-suspend-button:disabled { opacity: .55; cursor: wait; }
+.admin-actions-divider { width: 100%; display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.admin-actions-divider::after { content: ""; height: 1px; flex: 1; background: var(--line); }
 .admin-import-config { grid-template-columns: minmax(280px, 1fr) 170px auto; }
 
 @media (max-width: 850px) {

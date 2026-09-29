@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
-  CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -10,6 +9,9 @@ import {
   ScanLine,
   Search,
   ShieldCheck,
+  ShieldOff,
+  UserCheck,
+  UserX,
   Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -29,6 +31,8 @@ type Student = {
   registration: string;
   created_at: string;
   confirmed: boolean;
+  membership_status: "pending" | "active" | "suspended" | "inactive";
+  membership_reviewed_at: string | null;
   plan: "basic" | "premium" | "plus";
   expires_at: string | null;
   subscription_status: "free" | "pro" | "expired" | "cancelled";
@@ -56,6 +60,10 @@ type Overview = {
     free: number;
     pro: number;
     cancelled: number;
+    members_active: number;
+    members_pending: number;
+    members_suspended: number;
+    members_inactive: number;
   };
   server_time: string;
 };
@@ -71,6 +79,13 @@ function date(value: string | null) {
       })
     : "—";
 }
+function readableError(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String((error as { message?: unknown }).message || "").trim();
+    if (message) return message;
+  }
+  return fallback;
+}
 export function AdminPanel() {
   const [result, setResult] = useState<Overview | null>(null);
   const [query, setQuery] = useState("");
@@ -85,6 +100,7 @@ export function AdminPanel() {
     useState<PlanConfig>(DEFAULT_PLAN_CONFIG);
   const [configBusy, setConfigBusy] = useState(false);
   const [choices, setChoices] = useState<Record<string, SubscriptionPlan>>({});
+  const [registrations, setRegistrations] = useState<Record<string, string>>({});
   const request = useRef(0);
   const changing = useRef(false);
   const load = useCallback(async () => {
@@ -160,6 +176,43 @@ export function AdminPanel() {
       setMessage(
         "Não foi possível confirmar a alteração. Atualize a lista e confira a validade antes de tentar novamente.",
       );
+    } finally {
+      changing.current = false;
+      setBusy(null);
+    }
+  }
+  async function changeMembership(
+    student: Student,
+    action: "approve" | "suspend" | "reactivate" | "deactivate",
+  ) {
+    if (changing.current) return;
+    const registration = (registrations[student.id] ?? student.registration).trim();
+    const descriptions = {
+      approve: `Aprovar ${student.name || student.email} como aluno da academia?`,
+      suspend: `Suspender temporariamente o acesso de ${student.name || student.email}? Os dados continuarão salvos.`,
+      reactivate: student.membership_status === "active"
+        ? `Salvar a matrícula ${registration} para ${student.name || student.email}?`
+        : `Reativar o acesso de ${student.name || student.email}?`,
+      deactivate: `Marcar ${student.name || student.email} como aluno inativo? O acesso será bloqueado, mas os dados continuarão salvos.`,
+    };
+    if (!window.confirm(descriptions[action])) return;
+    changing.current = true;
+    setBusy(`membership-${student.id}`);
+    setMessage("");
+    try {
+      const { error } = await createClient().rpc("summer_admin_set_membership", {
+        p_user_id: student.id,
+        p_action: action,
+        p_registration: registration || null,
+      });
+      if (error) throw error;
+      setMessage(action === "approve" || action === "reactivate"
+        ? "Acesso do aluno atualizado. A tela dele será liberada automaticamente."
+        : "Acesso bloqueado. Os treinos e registros do aluno foram preservados.");
+      setRegistrations(current => { const next = { ...current }; delete next[student.id]; return next; });
+      await load();
+    } catch (error) {
+      setMessage(readableError(error, "Não foi possível alterar o acesso do aluno."));
     } finally {
       changing.current = false;
       setBusy(null);
@@ -259,23 +312,23 @@ export function AdminPanel() {
         <div className="admin-stats">
           <article>
             <Users size={21} />
-            <span>Alunos cadastrados</span>
+            <span>Contas de alunos</span>
             <strong>{summary?.total ?? "—"}</strong>
           </article>
           <article>
             <Check size={21} />
-            <span>Planos ativos</span>
-            <strong>{summary?.active ?? "—"}</strong>
+            <span>Alunos ativos</span>
+            <strong>{summary?.members_active ?? "—"}</strong>
           </article>
           <article>
-            <CalendarDays size={21} />
-            <span>Vencem em até 7 dias</span>
-            <strong>{summary?.expiring ?? "—"}</strong>
+            <UserCheck size={21} />
+            <span>Aguardando aprovação</span>
+            <strong>{summary?.members_pending ?? "—"}</strong>
           </article>
           <article>
-            <CalendarDays size={21} />
-            <span>Planos vencidos</span>
-            <strong>{summary?.expired ?? "—"}</strong>
+            <ShieldOff size={21} />
+            <span>Suspensos ou inativos</span>
+            <strong>{summary ? summary.members_suspended + summary.members_inactive : "—"}</strong>
           </article>
         </div>
         {importConfig && (
@@ -352,6 +405,10 @@ export function AdminPanel() {
                 }}
               >
                 <option value="all">Todos os alunos</option>
+                <option value="pending">Aguardando aprovação</option>
+                <option value="active">Alunos ativos</option>
+                <option value="suspended">Acesso suspenso</option>
+                <option value="inactive">Matrícula inativa</option>
                 <option value="pro">Summer PRO ativo</option>
                 <option value="expiring">Vencem em até 7 dias</option>
                 <option value="expired">Planos vencidos</option>
@@ -373,6 +430,7 @@ export function AdminPanel() {
                 <tr>
                   <th>Aluno</th>
                   <th>Matrícula</th>
+                  <th>Academia</th>
                   <th>Plano</th>
                   <th>Renovação até</th>
                   <th>Situação</th>
@@ -382,7 +440,7 @@ export function AdminPanel() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="table-empty">
+                    <td colSpan={7} className="table-empty">
                       Carregando alunos...
                     </td>
                   </tr>
@@ -397,7 +455,15 @@ export function AdminPanel() {
                           {!student.confirmed && " · E-mail pendente"}
                         </small>
                       </td>
-                      <td>{student.registration || "Não informada"}</td>
+                      <td><strong>{student.registration || "Não informada"}</strong></td>
+                      <td>
+                        <span className={`membership-badge ${student.membership_status}`}>
+                          {student.membership_status === "active" ? "Aluno ativo"
+                            : student.membership_status === "pending" ? "Aguardando aprovação"
+                              : student.membership_status === "suspended" ? "Suspenso"
+                                : "Inativo"}
+                        </span>
+                      </td>
                       <td>
                         <span
                           className={`plan-badge ${student.subscription_status === "pro" ? "plus" : "basic"}`}
@@ -451,6 +517,45 @@ export function AdminPanel() {
                       </td>
                       <td>
                         <div className="admin-row-actions">
+                          <label className="admin-registration-field">
+                            Matrícula de 4 números
+                            <input
+                              inputMode="numeric"
+                              pattern="[0-9]{4}"
+                              maxLength={4}
+                              value={registrations[student.id] ?? student.registration}
+                              onChange={(event) => setRegistrations(current => ({
+                                ...current,
+                                [student.id]: event.target.value.replace(/\D/g, "").slice(0, 4),
+                              }))}
+                            />
+                          </label>
+                          {student.membership_status === "pending" && <button
+                            className="membership-approve-button"
+                            disabled={Boolean(busy) || !student.confirmed || (registrations[student.id] ?? student.registration).length !== 4}
+                            onClick={() => void changeMembership(student, "approve")}
+                          >{busy === `membership-${student.id}` ? "SALVANDO..." : "APROVAR ALUNO"}</button>}
+                          {(student.membership_status === "suspended" || student.membership_status === "inactive") && <button
+                            className="membership-approve-button"
+                            disabled={Boolean(busy) || (registrations[student.id] ?? student.registration).length !== 4}
+                            onClick={() => void changeMembership(student, "reactivate")}
+                          ><UserCheck size={15} />REATIVAR ACESSO</button>}
+                          {student.membership_status === "active" && (registrations[student.id] ?? student.registration) !== student.registration && <button
+                            className="secondary-button"
+                            disabled={Boolean(busy) || (registrations[student.id] ?? "").length !== 4}
+                            onClick={() => void changeMembership(student, "reactivate")}
+                          >Salvar matrícula</button>}
+                          {student.membership_status === "active" && <button
+                            className="membership-suspend-button"
+                            disabled={Boolean(busy)}
+                            onClick={() => void changeMembership(student, "suspend")}
+                          ><ShieldOff size={15} />Suspender</button>}
+                          {(student.membership_status === "active" || student.membership_status === "suspended") && <button
+                            className="revoke-button"
+                            disabled={Boolean(busy)}
+                            onClick={() => void changeMembership(student, "deactivate")}
+                          ><UserX size={15} />Aluno saiu</button>}
+                          <div className="admin-actions-divider"><span>Plano Summer PRO</span></div>
                           {student.pending_request && (
                             <div className="pending-request-card">
                               <strong>PIX aguardando conferência</strong>
@@ -463,7 +568,7 @@ export function AdminPanel() {
                               <div>
                                 <button
                                   className="primary-button"
-                                  disabled={Boolean(busy)}
+                                  disabled={Boolean(busy) || student.membership_status !== "active"}
                                   onClick={() =>
                                     void reviewRequest(student, "approved")
                                   }
@@ -493,7 +598,7 @@ export function AdminPanel() {
                               student.subscription_plan ||
                               "monthly"
                             }
-                            disabled={Boolean(busy)}
+                            disabled={Boolean(busy) || student.membership_status !== "active"}
                             onChange={(e) =>
                               setChoices((current) => ({
                                 ...current,
@@ -510,7 +615,7 @@ export function AdminPanel() {
                           </select>
                           <button
                             className="primary-button"
-                            disabled={Boolean(busy) || !student.confirmed}
+                            disabled={Boolean(busy) || !student.confirmed || student.membership_status !== "active"}
                             onClick={() => void changePlan(student, "grant")}
                           >
                             {busy === student.id
@@ -545,7 +650,7 @@ export function AdminPanel() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="table-empty">
+                    <td colSpan={7} className="table-empty">
                       {result
                         ? "Nenhum aluno encontrado com esses filtros."
                         : "A lista não está disponível. Tente atualizar."}
@@ -587,8 +692,9 @@ export function AdminPanel() {
           </div>
         </section>
         <p className="admin-note">
-          Todas as liberações, renovações e revogações ficam registradas para
-          auditoria. Apenas contas com e-mail confirmado podem receber um plano.
+          Aprovações, suspensões, reativações e alterações de plano ficam
+          registradas. Apenas contas com e-mail confirmado e matrícula ativa
+          podem utilizar o aplicativo.
         </p>
       </section>
     </main>

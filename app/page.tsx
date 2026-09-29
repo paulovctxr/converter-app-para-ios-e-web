@@ -22,6 +22,7 @@ import {
 import { AuthScreen } from "@/components/auth-screen";
 import { createClient } from "@/lib/supabase/client";
 import { createSubscriptionSync } from "@/lib/subscription-sync";
+import type { Membership } from "@/lib/membership";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import {
   emptyFitness,
@@ -48,6 +49,7 @@ import {
   Pencil,
   Play,
   Plus,
+  RefreshCw,
   Sun,
   Target,
   Trash2,
@@ -151,7 +153,84 @@ export default function Page() {
       </main>
     );
   if (!user) return <AuthScreen initialMessage={authError} />;
-  return <Dashboard key={user.id} user={user} />;
+  return <MembershipBoundary key={user.id} user={user} />;
+}
+
+function MembershipBoundary({ user }: { user: User }) {
+  const [membership, setMembership] = useState<Membership | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const refreshRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    let disposed = false;
+    let running = false;
+    let lastState = "";
+    const refresh = async () => {
+      if (disposed || running || document.hidden || !navigator.onLine) return;
+      running = true;
+      try {
+        const { data, error: membershipError } = await createClient().rpc("summer_get_membership");
+        if (membershipError || !data) throw membershipError || new Error("membership unavailable");
+        if (disposed) return;
+        const next = data as Membership;
+        const state = JSON.stringify([next.status, next.registration, next.is_admin, next.updated_at]);
+        if (state !== lastState) {
+          lastState = state;
+          setMembership(next);
+        }
+        setError("");
+      } catch {
+        if (!disposed && !membership) setError("Não foi possível verificar sua matrícula. Confira a conexão e tente novamente.");
+      } finally {
+        if (!disposed) setLoading(false);
+        running = false;
+      }
+    };
+    refreshRef.current = () => { void refresh(); };
+    void refresh();
+    const visibleRefresh = () => { if (!document.hidden) void refresh(); };
+    window.addEventListener("focus", visibleRefresh);
+    window.addEventListener("online", visibleRefresh);
+    document.addEventListener("visibilitychange", visibleRefresh);
+    const timer = window.setInterval(visibleRefresh, 5000);
+    return () => {
+      disposed = true;
+      refreshRef.current = () => {};
+      window.removeEventListener("focus", visibleRefresh);
+      window.removeEventListener("online", visibleRefresh);
+      document.removeEventListener("visibilitychange", visibleRefresh);
+      window.clearInterval(timer);
+    };
+  }, [user.id]);
+
+  async function signOut() {
+    await createClient().auth.signOut();
+  }
+  if (loading && !membership) return <main className="auth-shell"><PanelLoading /></main>;
+  if (membership?.is_admin || membership?.status === "active")
+    return <Dashboard key={user.id} user={user} />;
+
+  const status = membership?.status;
+  const content = status === "suspended"
+    ? { title: "Acesso suspenso", text: "Seu acesso foi suspenso pela administração. Seus treinos continuam salvos e voltarão quando sua matrícula for reativada." }
+    : status === "inactive"
+      ? { title: "Matrícula inativa", text: "Sua matrícula não está ativa no momento. Seus dados permanecem guardados caso você volte para a academia." }
+      : { title: "Cadastro aguardando aprovação", text: "Recebemos seu cadastro. A administração irá conferir sua matrícula antes de liberar o aplicativo." };
+  return <main className="auth-shell membership-shell">
+    <section className="auth-card membership-gate" aria-live="polite">
+      <img className="membership-logo" src="/summer-fit-brand.jpeg" alt="Summer Fit" />
+      <div className="membership-gate-icon"><ShieldCheck size={28} /></div>
+      <p className="eyebrow">ACESSO EXCLUSIVO PARA ALUNOS</p>
+      <h1>{error ? "Não foi possível verificar seu acesso" : content.title}</h1>
+      <p>{error || content.text}</p>
+      {membership?.registration && <div className="membership-number"><span>Matrícula informada</span><strong>{membership.registration}</strong></div>}
+      <p className="membership-auto-note">Esta tela será atualizada automaticamente depois da aprovação.</p>
+      <div className="membership-gate-actions">
+        <button className="primary-button" onClick={() => refreshRef.current()}><RefreshCw size={17} />VERIFICAR AGORA</button>
+        <button className="secondary-button" onClick={() => void signOut()}><LogOut size={17} />Sair da conta</button>
+      </div>
+    </section>
+  </main>;
 }
 
 function Dashboard({ user }: { user: User }) {

@@ -1,37 +1,58 @@
-SUMMER FIT — LIBERAÇÃO AUTOMÁTICA DO PRO
+SUMMER FIT — ACESSO EXCLUSIVO PARA ALUNOS
 
-COMO ATUALIZAR
+O SUPABASE JÁ FOI ATUALIZADO
+As regras de matrícula e segurança já estão ativas no projeto atual.
+Não copie o caminho do arquivo SQL para o SQL Editor e não execute a migração
+manualmente. Os arquivos de migração estão no pacote apenas para manter o
+seu projeto local igual ao banco.
+
+COMO PUBLICAR O SITE
 1. Extraia este ZIP.
-2. Copie as pastas app, components, lib e tests para dentro do seu projeto,
-   junto do package.json. Mescle as pastas e substitua os arquivos de mesmo nome.
-   Não apague as pastas existentes.
-3. No GitHub Desktop, faça o commit e clique em Push origin.
-4. Aguarde o Vercel mostrar Ready. Quem já estiver com uma versão antiga aberta
-   deve atualizar a página uma vez para receber este código.
+2. Copie as pastas app, components, lib, supabase e tests para dentro da pasta
+   do seu projeto, ao lado do package.json.
+3. Escolha mesclar as pastas e substituir os arquivos de mesmo nome. Não
+   apague as pastas completas, pois o projeto possui outros arquivos nelas.
+4. Abra o GitHub Desktop, confira os arquivos alterados, escreva uma mensagem
+   como "Controle de matrícula dos alunos" e clique em Commit.
+5. Clique em Push origin.
+6. Aguarde o Vercel mostrar Ready.
 
-Não há migração SQL nem alteração de chave ou configuração no Supabase.
+O QUE MUDA
+- O cadastro passa a exigir uma matrícula com exatamente 4 números.
+- Todo novo aluno começa como "Aguardando aprovação".
+- Somente o administrador pode aprovar, suspender, reativar ou marcar como
+  inativo.
+- Um aluno suspenso ou inativo perde acesso ao app e aos dados no banco.
+- Os treinos, o histórico e a nutrição ficam guardados durante o bloqueio.
+- A tela do aluno atualiza automaticamente poucos segundos após uma ação sua.
+- O Summer PRO continua separado da situação da academia. O aluno precisa
+  estar ativo na academia para usar o Grátis ou o PRO.
 
-COMO FUNCIONA
-O app consulta a assinatura no servidor a cada 5 segundos enquanto a página
-estiver visível e com internet. Também consulta ao voltar à aba ou recuperar
-a conexão. O prazo depende da conexão e da resposta do servidor.
+CONTAS QUE JÁ EXISTIAM
+As 26 contas confirmadas que já estavam no Supabase foram mantidas como ativas
+para não bloquear alunos atuais de surpresa. Revise a lista no painel e use
+"Suspender" ou "Aluno saiu" nas contas que não devem continuar.
 
-Após você aprovar o plano no painel administrativo, os recursos PRO aparecem
-automaticamente para o aluno, sem sair da conta. O aviso de liberação aparece
-e a tela de pagamento pendente dá lugar à assinatura ativa. A página inteira
-não é recarregada, preservando o treino em andamento.
+COMO GERENCIAR
+Entre na sua conta de administrador e abra:
+https://summertreinos.vercel.app/admin
 
-As verificações usam o usuário autenticado. O botão de envio do comprovante
-continua sem poder liberar o PRO: a decisão permanece no servidor.
+No painel:
+- Aguardando aprovação: confira nome e matrícula e clique em APROVAR ALUNO.
+- Aluno ativo: pode usar o aplicativo normalmente.
+- Suspenso: bloqueio temporário; os dados permanecem salvos.
+- Inativo: use quando a pessoa não frequenta mais a academia.
+- Reativar acesso: devolve o acesso com todos os dados anteriores.
 
-VERIFICAÇÃO PRÁTICA APÓS PUBLICAR
-Deixe a conta de um aluno gratuito aberta em um celular. Em outro navegador,
-aprove a solicitação pelo painel administrativo. Com a página do aluno visível
-e conectada, aguarde alguns segundos e confira o aviso e o acesso ao PRO.
+TESTE DEPOIS DA PUBLICAÇÃO
+1. Crie uma conta de teste com uma matrícula de 4 números que ainda não existe.
+2. Confirme o e-mail e entre. Deve aparecer "Cadastro aguardando aprovação".
+3. Em outra tela, entre no painel administrativo e aprove o aluno.
+4. A conta de teste deve abrir o aplicativo automaticamente em poucos segundos.
+5. Suspenda a conta e confira que a tela é bloqueada sem perder os treinos.
 
-VALIDAÇÃO LOCAL
-TypeScript e build de produção passaram. Os testes passaram para transição
-Grátis/PRO/expirado, falhas de rede, consultas simultâneas, descarte de respostas
-após saída e regras de aprovação e isolamento no banco de teste.
-
-Este pacote é uma atualização do código, não uma publicação automática.
+VALIDAÇÃO REALIZADA
+- Build de produção e TypeScript aprovados.
+- 33 testes aprovados.
+- Testes reais de políticas Postgres/RLS para cadastro pendente, aprovação,
+  suspensão, reativação, preservação dos treinos, PRO, nutrição e importação.
