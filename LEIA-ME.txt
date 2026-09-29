@@ -1,24 +1,28 @@
-SUMMER TREINOS — NUTRIÇÃO PRO SEM CARD DA ELISABETE
+SUMMER TREINOS — IMAGENS EM COMO EXECUTAR
 
-O que foi alterado:
-- Usuários Summer PRO veem somente a Nutrição com IA na aba Nutrição.
-- O card da nutricionista Elisabete não aparece para usuários PRO.
-- O card continua disponível para usuários gratuitos, junto da apresentação do plano PRO.
-- Nenhuma configuração do Supabase ou SQL precisa ser alterada.
+O que foi atualizado:
+- Cada exercício agora mostra uma demonstração visual em duas etapas: Início e Movimento.
+- As imagens aparecem quando o usuário toca no card do exercício.
+- O texto com os passos e os cuidados continua logo abaixo.
+- As ilustrações são vetoriais, leves e funcionam sem depender de sites externos.
+- A correção anterior também está incluída: o card da Elisabete não aparece para usuários PRO.
+
+Não é necessário executar SQL nem alterar o Supabase.
 
 COMO PUBLICAR
 
-1. Extraia este arquivo ZIP.
-2. Copie a pasta "app" para a pasta principal do seu projeto.
-3. Quando o computador perguntar, confirme a substituição do arquivo app/page.tsx.
+1. Extraia este ZIP.
+2. Copie as pastas "app" e "components" para a pasta principal do projeto.
+3. Confirme a substituição dos arquivos existentes.
 4. Abra o GitHub Desktop.
-5. Escreva no resumo do commit:
-   Ocultar Elisabete na Nutrição PRO
+5. No resumo do commit, escreva:
+   Adicionar imagens de execução dos exercícios
 6. Clique em "Commit to main".
 7. Clique em "Push origin".
-8. Aguarde o projeto ficar "Ready" na Vercel.
-9. Entre com uma conta PRO e abra Nutrição para conferir.
+8. Aguarde a Vercel mostrar "Ready".
+9. Entre com uma conta PRO, abra Nutrição > Exercícios e toque em um exercício.
 
-Teste realizado:
-- TypeScript: aprovado.
-- Build de produção: aprovado.
+Verificações realizadas:
+- TypeScript aprovado.
+- 33 testes aprovados.
+- Build de produção aprovado.

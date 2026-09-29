@@ -528,6 +528,17 @@ body:has(.paywall-overlay) { overflow: hidden; }
 .library-exercise-card > div { padding: 0 15px 14px 63px; color: var(--muted); }
 .library-exercise-card h6 { margin: 8px 0 5px; color: var(--ink); font-size: 10px; text-transform: uppercase; }
 .library-exercise-card ol, .library-exercise-card ul { margin: 0; padding-left: 17px; font-size: 10px; line-height: 1.55; }
+.exercise-illustration { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 5px 0 13px; }
+.exercise-illustration > div { position: relative; min-width: 0; padding: 22px 5px 3px; border: 1px solid #eadcae; border-radius: 12px; background: linear-gradient(145deg, #fffdf7, #fff8da); overflow: hidden; }
+.exercise-illustration > div > span { position: absolute; top: 8px; left: 9px; z-index: 1; color: #705900; font-size: 8px; font-weight: 900; letter-spacing: .7px; text-transform: uppercase; }
+.exercise-illustration svg { display: block; width: 100%; height: auto; max-height: 145px; }
+.exercise-pose { fill: none; stroke: #202020; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.exercise-pose .exercise-head { fill: #ffd400; stroke: #c80d1a; stroke-width: 2.5; }
+.exercise-pose .exercise-body { stroke: #c80d1a; stroke-width: 7; }
+.exercise-pose .exercise-limb { stroke-width: 5; }
+.exercise-pose .exercise-cable { stroke: #b89b3a; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.exercise-pose .exercise-floor { stroke: #d8c77f; stroke-width: 5; }
+.exercise-illustration figcaption { grid-column: 1 / -1; margin-top: 1px; color: #766f61; font-size: 9px; line-height: 1.45; }
 
 .pro-progress-insights { max-width: 850px; margin-top: 16px; padding: 18px; border: 1px solid #e4c341; border-radius: 18px; background: #fffbee; }
 .pro-progress-heading h3 { margin: 4px 0; }
@@ -594,6 +605,8 @@ body:has(.paywall-overlay) { overflow: hidden; }
   .library-exercise-card summary { grid-template-columns: auto 1fr; }
   .library-exercise-card summary em { grid-column: 2; }
   .library-exercise-card > div { padding-left: 15px; }
+  .exercise-illustration { gap: 6px; }
+  .exercise-illustration > div { padding-inline: 2px; }
   .load-progress-card .section-heading { align-items: stretch; flex-direction: column; }
   .load-progress-card select { width: 100%; }
 }

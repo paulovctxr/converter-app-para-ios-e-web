@@ -20,6 +20,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ExerciseIllustration } from "@/components/exercise-illustration";
 import { nutritionDraft, parseNutritionDraft, type NutritionDraft } from "@/lib/nutrition-draft";
 import {
   ACTIVITY_LABELS,
@@ -1224,6 +1225,7 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
                         <em>{exercise.difficulty}</em>
                       </summary>
                       <div>
+                        <ExerciseIllustration slug={exercise.slug} name={exercise.name} />
                         <h6>Como executar</h6>
                         <ol>
                           {exercise.instructions.map((instruction) => (
