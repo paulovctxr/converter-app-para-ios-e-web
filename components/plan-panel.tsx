@@ -295,9 +295,8 @@ export function PlanPanel({
             <div className="pix-receiver-note">
               <strong>Sobre o pagamento</strong>
               <span>
-                O valor do plano será recebido pelo recepcionista Paulo, da
-                academia, que também é o desenvolvedor da aplicação. Depois do
-                PIX, envie o comprovante para conferência.
+                O valor do plano será recebido por Paulo, desenvolvedor da
+                aplicação. Depois do PIX, envie o comprovante para conferência.
               </span>
             </div>
             <code>{config.pix_key}</code>
