@@ -215,7 +215,7 @@ function MembershipBoundary({ user }: { user: User }) {
     ? { title: "Acesso suspenso", text: "Seu acesso foi suspenso pela administração. Seus treinos continuam salvos e voltarão quando sua matrícula for reativada." }
     : status === "inactive"
       ? { title: "Matrícula inativa", text: "Sua matrícula não está ativa no momento. Seus dados permanecem guardados caso você volte para a academia." }
-      : { title: "Cadastro aguardando aprovação", text: "Recebemos seu cadastro. A administração irá conferir sua matrícula antes de liberar o aplicativo." };
+      : { title: "Finalizando seu acesso", text: "Seu cadastro está sendo preparado. Toque em verificar novamente; não é necessária aprovação manual." };
   return <main className="auth-shell membership-shell">
     <section className="auth-card membership-gate" aria-live="polite">
       <img className="membership-logo" src="/summer-fit-brand.jpeg" alt="Summer Fit" />
@@ -224,7 +224,7 @@ function MembershipBoundary({ user }: { user: User }) {
       <h1>{error ? "Não foi possível verificar seu acesso" : content.title}</h1>
       <p>{error || content.text}</p>
       {membership?.registration && <div className="membership-number"><span>Matrícula informada</span><strong>{membership.registration}</strong></div>}
-      <p className="membership-auto-note">Esta tela será atualizada automaticamente depois da aprovação.</p>
+      <p className="membership-auto-note">Esta tela será atualizada automaticamente assim que o cadastro estiver pronto.</p>
       <div className="membership-gate-actions">
         <button className="primary-button" onClick={() => refreshRef.current()}><RefreshCw size={17} />VERIFICAR AGORA</button>
         <button className="secondary-button" onClick={() => void signOut()}><LogOut size={17} />Sair da conta</button>

@@ -10,7 +10,7 @@ export type Membership = {
 };
 
 export const MEMBERSHIP_LABELS: Record<MembershipStatus, string> = {
-  pending: "Aguardando aprovação",
+  pending: "Ativação automática",
   active: "Aluno ativo",
   suspended: "Acesso suspenso",
   inactive: "Matrícula inativa",

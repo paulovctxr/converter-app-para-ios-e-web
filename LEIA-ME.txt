@@ -1,54 +1,24 @@
-SUMMER TREINOS — NOVIDADES DE NUTRIÇÃO COM IA
+SUMMER FIT — ACESSO AUTOMÁTICO
 
-O que mudou:
-- A aba "Exercícios" foi removida do painel de Nutrição PRO.
-- A tela de planos, o paywall e a Home agora apresentam as duas novidades.
-- "Biblioteca completa de exercícios" foi retirada da lista de vantagens do PRO.
-- A nova aba "Foto da comida" permite fotografar ou escolher uma imagem da galeria.
-- A IA faz uma estimativa de alimento, calorias e macronutrientes.
-- O usuário revisa e edita tudo antes de confirmar o registro.
-- Cada refeição do cardápio ganhou o botão "Substituir com IA".
-- A substituição atualiza a refeição, os totais do dia e a lista de compras.
-- A foto não é armazenada depois da análise.
-- O card da Elisabete continua oculto para usuários PRO.
+O que mudou
+- Novas contas entram automaticamente no Summer Grátis.
+- Não existe mais aprovação manual para entrar no aplicativo.
+- Contas que estavam pendentes são ativadas automaticamente.
+- O administrador ainda pode suspender, desativar e reativar alunos.
+- A aprovação do pagamento do Summer PRO continua manual e segura.
 
-IMPORTANTE SOBRE O SUPABASE
+O banco de dados do projeto já foi atualizado e verificado.
 
-O envio automático para o Supabase não foi concluído nesta sessão porque a aprovação da ferramenta atingiu o limite de uso. Portanto, faça os dois passos abaixo uma vez:
-
-1. Supabase > SQL Editor.
-2. Abra o arquivo:
-   supabase/migrations/20260929221500_nutrition_ai_food_tools.sql
-3. Copie todo o conteúdo, cole no SQL Editor e clique em Run.
-4. Supabase > Edge Functions > Create a new function.
-5. Crie a função com o nome:
-   nutrition-ai-tools
-6. Copie o conteúdo de:
-   supabase/functions/nutrition-ai-tools/index.ts
-   para o editor da função.
-7. Se o editor aceitar arquivos auxiliares, adicione também o deno.json da mesma pasta.
-8. Publique a função.
-
-A função precisa manter verify_jwt ativado e usar o segredo OPENAI_API_KEY já configurado.
-Não coloque a chave em arquivos do projeto ou em variáveis NEXT_PUBLIC_*. 
-
-COMO PUBLICAR O FRONTEND
-
+Como atualizar o site
 1. Extraia este ZIP.
-2. Copie as pastas "app", "components" e "lib" para a raiz do projeto.
-3. Copie também a pasta "supabase" para a raiz, caso ainda não tenha os arquivos novos.
-4. Confirme a substituição dos arquivos.
-5. No GitHub Desktop, faça Commit to main.
+2. Copie todas as pastas sobre a pasta do projeto no seu computador.
+3. No GitHub Desktop, confira os arquivos alterados.
+4. Escreva o resumo: Acesso automático para novos cadastros
+5. Clique em Commit to main.
 6. Clique em Push origin.
-7. Aguarde a Vercel mostrar Ready.
+7. Aguarde o Vercel mostrar Ready.
 
-Como testar:
-- Entre com uma conta PRO.
-- Abra Nutrição > Foto da comida.
-- Escolha uma foto, clique em Analisar com IA, revise e confirme.
-- Abra Cardápio e clique em Substituir com IA em uma refeição.
-
-Verificações locais:
-- TypeScript aprovado.
-- 33 testes aprovados.
-- Build de produção aprovado.
+Observação sobre confirmação de e-mail
+- Esta atualização remove a aprovação manual feita pelo administrador.
+- Se a confirmação de e-mail estiver ativada no Supabase, a pessoa ainda
+  precisará confirmar o endereço de e-mail antes do primeiro login.

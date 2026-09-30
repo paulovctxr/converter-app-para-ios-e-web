@@ -37,7 +37,7 @@ export function AuthScreen({ initialMessage = '' }: { initialMessage?: string })
         setMessage(error.code === 'email_not_confirmed' ? 'Confirme seu e-mail antes de entrar. Confira também a pasta de spam.' : error.code === 'invalid_credentials' ? 'E-mail ou senha incorretos. Você pode recuperar sua senha abaixo.' : error.status === 429 ? 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' : 'Não foi possível concluir. Confira os dados e tente novamente em instantes.')
         return
       }
-      if (mode === 'signup' && !data.session) setMessage('Confira seu e-mail para confirmar o cadastro. Depois da confirmação, sua matrícula ficará aguardando aprovação.')
+      if (mode === 'signup' && !data.session) setMessage('Confira seu e-mail para confirmar o cadastro. Depois da confirmação, você já poderá entrar normalmente.')
     } catch { setMessage('Não foi possível conectar ao serviço de acesso. Confira sua conexão e tente novamente.') }
     finally { setLoading(false) }
   }
@@ -61,7 +61,7 @@ export function AuthScreen({ initialMessage = '' }: { initialMessage?: string })
       <div className="auth-logo">
         <img className="auth-academy-logo" src="/summer-fit-brand.jpeg" alt="Summer Fit" width={280} height={78} />
       </div>
-      <div className="auth-heading"><div className="auth-icon"><Dumbbell size={22} /></div><p className="eyebrow">UM TREINO DE CADA VEZ</p><h1 id="auth-title">{mode === 'login' ? 'Seu próximo passo começa aqui.' : mode === 'signup' ? 'Vamos começar?' : 'Recupere seu acesso'}</h1><p>{mode === 'login' ? 'Suas fichas, sua rotina e cada conquista em um só lugar.' : mode === 'signup' ? 'Informe sua matrícula da academia. O acesso será liberado após a conferência.' : 'Enviaremos um link para você escolher uma nova senha.'}</p></div>
+      <div className="auth-heading"><div className="auth-icon"><Dumbbell size={22} /></div><p className="eyebrow">UM TREINO DE CADA VEZ</p><h1 id="auth-title">{mode === 'login' ? 'Seu próximo passo começa aqui.' : mode === 'signup' ? 'Vamos começar?' : 'Recupere seu acesso'}</h1><p>{mode === 'login' ? 'Suas fichas, sua rotina e cada conquista em um só lugar.' : mode === 'signup' ? 'Informe seus dados e comece a usar o Summer assim que confirmar o cadastro.' : 'Enviaremos um link para você escolher uma nova senha.'}</p></div>
       <form className="auth-form" onSubmit={handleSubmit} aria-busy={loading}>
         {mode === 'signup' && <label>Seu nome<input value={name} onChange={e => setName(e.target.value)} placeholder="Como podemos chamar você?" autoComplete="name" maxLength={80} required /></label>}
         {mode === 'signup' && <label>Matrícula da academia<div className="input-with-icon"><IdCard size={17} aria-hidden="true" /><input type="text" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} value={registration} onChange={e => setRegistration(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="4 números" autoComplete="off" required /></div><small className="field-help">Use o número de matrícula fornecido pela academia.</small></label>}

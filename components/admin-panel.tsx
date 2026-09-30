@@ -322,8 +322,8 @@ export function AdminPanel() {
           </article>
           <article>
             <UserCheck size={21} />
-            <span>Aguardando aprovação</span>
-            <strong>{summary?.members_pending ?? "—"}</strong>
+            <span>Summer PRO ativos</span>
+            <strong>{summary?.pro ?? "—"}</strong>
           </article>
           <article>
             <ShieldOff size={21} />
@@ -405,7 +405,6 @@ export function AdminPanel() {
                 }}
               >
                 <option value="all">Todos os alunos</option>
-                <option value="pending">Aguardando aprovação</option>
                 <option value="active">Alunos ativos</option>
                 <option value="suspended">Acesso suspenso</option>
                 <option value="inactive">Matrícula inativa</option>
@@ -459,7 +458,7 @@ export function AdminPanel() {
                       <td>
                         <span className={`membership-badge ${student.membership_status}`}>
                           {student.membership_status === "active" ? "Aluno ativo"
-                            : student.membership_status === "pending" ? "Aguardando aprovação"
+                            : student.membership_status === "pending" ? "Ativação automática"
                               : student.membership_status === "suspended" ? "Suspenso"
                                 : "Inativo"}
                         </span>
@@ -534,7 +533,7 @@ export function AdminPanel() {
                             className="membership-approve-button"
                             disabled={Boolean(busy) || !student.confirmed || (registrations[student.id] ?? student.registration).length !== 4}
                             onClick={() => void changeMembership(student, "approve")}
-                          >{busy === `membership-${student.id}` ? "SALVANDO..." : "APROVAR ALUNO"}</button>}
+                          >{busy === `membership-${student.id}` ? "SALVANDO..." : "ATIVAR AGORA"}</button>}
                           {(student.membership_status === "suspended" || student.membership_status === "inactive") && <button
                             className="membership-approve-button"
                             disabled={Boolean(busy) || (registrations[student.id] ?? student.registration).length !== 4}
