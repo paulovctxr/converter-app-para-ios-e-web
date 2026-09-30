@@ -58,35 +58,21 @@ test('real Postgres permissions, subscriptions, PIX review and data isolation', 
     await assert.rejects(() => db.query('select * from summer_private.plan_config'), /permission denied/)
   })
 
-  await t.test('new accounts wait for approval and suspension preserves their workouts', async () => {
+  await t.test('new accounts enter automatically and suspension preserves their workouts', async () => {
     await db.exec(`reset role; insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data)
       values ('${newcomer}','new@example.test',now(),'{"name":"Novo","matricula":"5678"}')`)
     await asUser(newcomer)
     let membership = await scalar('select public.summer_get_membership()')
-    assert.equal(membership.status, 'pending')
+    assert.equal(membership.status, 'active')
     assert.equal(membership.registration, '5678')
-    assert.equal(await scalar('select public.summer_is_active_member()'), false)
-    await assert.rejects(
-      () => db.query(`select public.summer_save_fitness('{"goal":3,"workouts":[],"sessions":[]}',0)`),
-      /violates row-level security|Dados atualizados/,
-    )
-    await assert.rejects(
-      () => db.query(`select public.summer_request_subscription('monthly')`),
-      /Matrícula aguardando aprovação/,
-    )
-
-    await asUser(admin)
-    const approved = await scalar(`select public.summer_admin_set_membership('${newcomer}','approve','5678')`)
-    assert.equal(approved.status, 'active')
-    await asUser(newcomer)
     assert.equal(await scalar('select public.summer_is_active_member()'), true)
     assert.equal(await scalar(`select public.summer_save_fitness('{"goal":3,"workouts":[],"sessions":[]}',0)`), 1)
 
     await asUser(admin)
-    await db.query(`select public.summer_admin_set_membership('${newcomer}','deactivate',null)`)
+    await db.query(`select public.summer_admin_set_membership('${newcomer}','suspend',null)`)
     await asUser(newcomer)
     membership = await scalar('select public.summer_get_membership()')
-    assert.equal(membership.status, 'inactive')
+    assert.equal(membership.status, 'suspended')
     assert.equal((await db.query('select * from public.summer_fitness_state')).rows.length, 0)
     await db.exec('reset role')
     assert.equal((await db.query(`select * from public.summer_fitness_state where user_id='${newcomer}'`)).rows.length, 1)

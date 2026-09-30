@@ -380,6 +380,20 @@ export function WorkoutImporter({
     void loadAccess();
   }
 
+  function startAnotherImport() {
+    photos.forEach(discard);
+    if (pendingPhoto) discard(pendingPhoto);
+    setPhotos([]);
+    setPendingPhoto(null);
+    setAnalysis(null);
+    setImportId("");
+    setSaved(null);
+    setMessage("");
+    setProgress("");
+    setStep("photos");
+    void loadAccess();
+  }
+
   const reviewErrors = analysis
     ? validateWorkoutImport(analysis, availableWorkoutSlots)
     : [];
@@ -903,6 +917,13 @@ export function WorkoutImporter({
             </div>
             <button className="primary-button full-button" onClick={onClose}>
               VER MEUS TREINOS
+            </button>
+            <button
+              className="secondary-button full-button"
+              onClick={startAnotherImport}
+            >
+              <Camera size={17} />
+              DIGITALIZAR OUTRA FICHA
             </button>
           </div>
         )}
