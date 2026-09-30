@@ -333,37 +333,6 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
     }
   }
 
-  async function replaceMeal(mealId: string) {
-    if (busy || !plan) return;
-    setBusy(`replace-${mealId}`);
-    setMessage("");
-    try {
-      const { data, error } = await createClient().functions.invoke<{
-        plan?: unknown;
-        error?: string;
-      }>("nutrition-ai-tools", {
-        body: {
-          action: "replace_meal",
-          planId: plan.id,
-          dayIndex: selectedPlanDay,
-          mealId,
-        },
-      });
-      if (error || !data?.plan) {
-        const payload = await edgeError(error);
-        throw new Error(payload || data?.error || "Não foi possível substituir esta refeição.");
-      }
-      const updated = readMealPlan(data.plan);
-      if (!updated) throw new Error("O cardápio atualizado não foi reconhecido.");
-      setPlan(updated);
-      setMessage("Refeição substituída pela IA e lista de compras atualizada.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível substituir esta refeição.");
-    } finally {
-      setBusy("");
-    }
-  }
-
   async function removeFood(id: string) {
     if (busy || !window.confirm("Excluir este registro alimentar?")) return;
     setBusy(`food-${id}`);
@@ -833,19 +802,6 @@ export function ProWorkspace({ onRefresh, active = true }: { onRefresh: () => vo
                                 ))}
                               </ul>
                             </details>
-                            <button
-                              className="meal-replace-button"
-                              type="button"
-                              disabled={Boolean(busy)}
-                              onClick={() => void replaceMeal(meal.id)}
-                            >
-                              {busy === `replace-${meal.id}` ? (
-                                <LoaderCircle className="spin" size={15} />
-                              ) : (
-                                <Sparkles size={15} />
-                              )}
-                              SUBSTITUIR COM IA
-                            </button>
                           </article>
                         ))}
                       </div>

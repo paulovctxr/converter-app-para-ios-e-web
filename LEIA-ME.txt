@@ -1,24 +1,20 @@
-SUMMER FIT — ACESSO AUTOMÁTICO
+SUMMER TREINOS - ATUALIZACAO DO LIMITE DE CARDAPIOS
 
-O que mudou
-- Novas contas entram automaticamente no Summer Grátis.
-- Não existe mais aprovação manual para entrar no aplicativo.
-- Contas que estavam pendentes são ativadas automaticamente.
-- O administrador ainda pode suspender, desativar e reativar alunos.
-- A aprovação do pagamento do Summer PRO continua manual e segura.
+ALTERACOES
+- Limite restaurado para 4 cardapios por mes.
+- Botao "SUBSTITUIR COM IA" removido.
+- Rota de substituicao bloqueada no backend.
+- Registro de alimentacao por foto continua funcionando e possui cota separada.
 
-O banco de dados do projeto já foi atualizado e verificado.
-
-Como atualizar o site
+COMO INSTALAR
 1. Extraia este ZIP.
-2. Copie todas as pastas sobre a pasta do projeto no seu computador.
-3. No GitHub Desktop, confira os arquivos alterados.
-4. Escreva o resumo: Acesso automático para novos cadastros
-5. Clique em Commit to main.
-6. Clique em Push origin.
-7. Aguarde o Vercel mostrar Ready.
+2. Copie as pastas components e supabase para a pasta do projeto.
+3. Quando o Windows perguntar, escolha "Substituir os arquivos no destino".
+4. No GitHub Desktop, confira as alteracoes.
+5. Escreva o commit: Restaurar limite de cardapios
+6. Clique em Commit to main e depois em Push origin.
+7. Aguarde o Vercel ficar Ready.
 
-Observação sobre confirmação de e-mail
-- Esta atualização remove a aprovação manual feita pelo administrador.
-- Se a confirmação de e-mail estiver ativada no Supabase, a pessoa ainda
-  precisará confirmar o endereço de e-mail antes do primeiro login.
+BANCO DE DADOS
+A alteracao ja foi aplicada no Supabase. O arquivo SQL acompanha o ZIP para manter o projeto atualizado.
+Nao precisa executar o SQL novamente.

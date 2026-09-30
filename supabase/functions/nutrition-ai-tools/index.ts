@@ -230,7 +230,7 @@ Deno.serve(async req => {
   } catch {
     return response({ error: "Dados inválidos.", code: "invalid_body" }, 400)
   }
-  const action = body.action === "analyze_food_photo" ? "food_photo" : body.action === "replace_meal" ? "food_replacement" : ""
+  const action = body.action === "analyze_food_photo" ? "food_photo" : ""
   if (!action) return response({ error: "Ação inválida.", code: "invalid_action" }, 400)
 
   const { data: reservation, error: reservationError } = await userClient.rpc("summer_begin_nutrition_ai_action", { p_action: action })
